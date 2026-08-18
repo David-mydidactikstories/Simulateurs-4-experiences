@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Language Lab · Simulateur d'appel en langue étrangère</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<!--ANALYTICS-->
+<script>
+  window.track = function(nom, data){
+    try { if(window.umami && typeof window.umami.track === 'function'){ data ? window.umami.track(nom, data) : window.umami.track(nom); } }
+    catch(e){}
+  };
+</script>
+
+<script type="module">
+  import { GoogleGenAI, Modality } from 'https://esm.run/@google/genai';
+  window.__genai = { GoogleGenAI, Modality };
+  window.dispatchEvent(new Event('genai-ready'));
+</script>
+
+<style>
+:root{
+  --bg:#07070c;
+  --violet:#8b5cf6;
+  --cyan:#22d3ee;
+  --pink:#e879f9;
+  --txt:#f4f4f7;
+  --muted:#a9a9c2;
+  --soft:#dcdce9;
+  --glass:rgba(255,255,255,.045);
+  --glass-strong:rgba(255,255,255,.075);
+  --stroke:rgba(255,255,255,.10);
+  --stroke-hi:rgba(255,255,255,.20);
+  --level:0;      /* amplitude voix du personnage 0→1 */
+  --miclevel:0;   /* amplitude micro de l'utilisateur 0→1 */
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--txt);
+  font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh; overflow-x:hidden;
+}
+/* ---- halos d'arrière-plan ---- */
+.bg-wrap{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5}
+.blob-1{width:60vw;height:60vw;background:radial-gradient(circle,#6d28d9,transparent 70%);top:-22vw;left:-14vw;animation:drift1 24s ease-in-out infinite}
+.blob-2{width:52vw;height:52vw;background:radial-gradient(circle,#0891b2,transparent 70%);bottom:-20vw;right:-12vw;animation:drift2 30s ease-in-out infinite}
+.blob-3{width:38vw;height:38vw;background:radial-gradient(circle,#c026d3,transparent 70%);top:38%;left:52%;opacity:.28;animation:drift3 36s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(6vw,5vw)}}
+@keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-7vw,-4vw)}}
+@keyframes drift3{0%,100%{transform:translate(0,0)}50%{transform:translate(-5vw,6vw)}}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.16;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
+
+.shell{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:0 20px 64px}
+
+/* ---- verre ---- */
+.glass{background:var(--glass);border:1px solid var(--stroke);backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%)}
+.glass-hi{background:var(--glass-strong);border:1px solid var(--stroke-hi)}
+
+/* ---- en-tête ---- */
+header{display:flex;align-items:center;justify-content:space-between;padding:26px 0 8px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-mark{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;
+  background:linear-gradient(135deg,var(--violet),var(--cyan));box-shadow:0 8px 28px -8px rgba(139,92,246,.85)}
+.logo h1{font-family:'Space Grotesk';font-size:19px;font-weight:700;letter-spacing:-.03em;margin:0;line-height:1}
+.logo p{margin:3px 0 0;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;
+  font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.pill-live{background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.35);color:#67e8f9}
+.dot{width:7px;height:7px;border-radius:50%;background:#22d3ee;box-shadow:0 0 12px #22d3ee;animation:blip 1.6s infinite}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ---- écran de configuration ---- */
+.hero{text-align:center;padding:52px 0 40px}
+.hero .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted);border:1px solid var(--stroke);border-radius:999px;padding:7px 15px;margin-bottom:26px;background:var(--glass)}
+.hero h2{font-family:'Space Grotesk';font-size:clamp(34px,6vw,58px);line-height:1.02;letter-spacing:-.045em;margin:0 0 18px;font-weight:700}
+.grad{background:linear-gradient(100deg,var(--violet) 5%,var(--cyan) 55%,var(--pink) 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.sub{color:var(--soft);font-size:16.5px;max-width:530px;margin:0 auto;line-height:1.7;font-weight:400}
+
+.selectors{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+@media(max-width:820px){.selectors{grid-template-columns:1fr}}
+
+.field{border-radius:20px;padding:16px 18px;position:relative;z-index:1}
+.field.open{z-index:60}
+.field-label{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:11px;display:flex;align-items:center;gap:7px}
+.dd-btn{width:100%;background:none;border:0;color:var(--txt);font-family:inherit;font-size:15.5px;font-weight:500;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;padding:0;text-align:left}
+.dd-btn .val{display:flex;align-items:center;gap:11px;min-width:0}
+.dd-btn .flag{font-size:21px;line-height:1}
+.dd-btn .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-btn .chev{color:var(--muted);transition:transform .22s ease;flex-shrink:0}
+.field.open .dd-btn .chev{transform:rotate(180deg)}
+.field.locked{opacity:.72;cursor:not-allowed}
+.field.locked .dd-btn{cursor:not-allowed}
+.dd-panel{position:absolute;top:calc(100% + 9px);left:0;right:0;z-index:40;border-radius:18px;padding:7px;
+  background:rgba(14,14,22,.93);border:1px solid var(--stroke-hi);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+  box-shadow:0 26px 60px -18px rgba(0,0,0,.85);max-height:290px;overflow-y:auto}
+.dd-opt{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:var(--txt);
+  font-family:inherit;font-size:15px;padding:11px 13px;border-radius:13px;cursor:pointer;text-align:left;transition:background .14s}
+.dd-opt:hover{background:rgba(255,255,255,.07)}
+.dd-opt.sel{background:linear-gradient(100deg,rgba(139,92,246,.22),rgba(34,211,238,.14))}
+.dd-opt .hint{font-size:12.5px;color:var(--muted);display:block;margin-top:3px;font-weight:400}
+.dd-opt.dis{opacity:.6;cursor:not-allowed}
+.dd-opt.dis:hover{background:none}
+.soon{margin-left:auto;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:#b9b9d0;
+  border:1px solid var(--stroke);border-radius:999px;padding:3px 8px;white-space:nowrap}
+
+/* ---- carte mission ---- */
+.mission{border-radius:22px;padding:22px 24px;margin-bottom:26px;position:relative;z-index:0;overflow:hidden}
+.mission::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--violet),var(--cyan))}
+.mission .t{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--cyan);font-weight:600;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.mission ul{margin:0;padding-left:19px;color:var(--soft);font-size:15.5px;line-height:1.9;font-weight:400}
+.mission ul strong{font-weight:600;color:#fff}
+
+/* ---- bouton principal ---- */
+.cta{width:100%;border:0;border-radius:20px;padding:21px;font-family:'Space Grotesk';font-size:16px;font-weight:600;
+  letter-spacing:-.01em;color:#0a0a12;cursor:pointer;position:relative;overflow:hidden;
+  background:linear-gradient(100deg,var(--violet),var(--cyan));box-shadow:0 18px 44px -16px rgba(139,92,246,.95);
+  transition:transform .16s ease,box-shadow .16s ease;display:flex;align-items:center;justify-content:center;gap:11px}
+.cta:hover{transform:translateY(-2px);box-shadow:0 24px 54px -14px rgba(139,92,246,1)}
+.cta:active{transform:translateY(0)}
+.footnote{text-align:center;color:var(--muted);font-size:13px;margin-top:16px;font-weight:400}
+
+/* ---- écran d'appel ---- */
+.call{display:flex;flex-direction:column;align-items:center;padding-top:26px}
+.callbar{display:flex;align-items:center;gap:14px;margin-bottom:34px;flex-wrap:wrap;justify-content:center}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:8px 15px;border-radius:999px;font-size:13px;color:var(--soft);font-weight:500}
+.chip .k{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.orb-stage{position:relative;width:290px;height:290px;display:grid;place-items:center;margin-bottom:12px}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(139,92,246,.20)}
+.r1{width:100%;height:100%;animation:breathe 4.5s ease-in-out infinite}
+.r2{width:78%;height:78%;border-color:rgba(34,211,238,.18);animation:breathe 4.5s ease-in-out infinite .7s}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.07);opacity:.2}}
+.orb{width:168px;height:168px;border-radius:50%;position:relative;
+  background:conic-gradient(from 210deg,#7c3aed,#22d3ee,#e879f9,#7c3aed);
+  box-shadow:0 0 70px rgba(139,92,246,.55),0 0 130px rgba(34,211,238,.28),inset 0 0 50px rgba(255,255,255,.16);
+  animation:spin 14s linear infinite;
+  transform:scale(calc(1 + var(--level) * .30));
+  transition:transform .07s linear}
+@keyframes spin{to{transform:rotate(360deg)}}
+.orb-inner{position:absolute;inset:13px;border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.30),rgba(10,10,18,.86) 62%);backdrop-filter:blur(6px)}
+.orb-halo{position:absolute;width:168px;height:168px;border-radius:50%;pointer-events:none;
+  box-shadow:0 0 0 calc(6px + var(--level) * 34px) rgba(139,92,246,.14);transition:box-shadow .1s linear}
+.mic-ring{position:absolute;width:230px;height:230px;border-radius:50%;border:2px solid rgba(34,211,238,.6);
+  opacity:calc(var(--miclevel) * 1.6);transform:scale(calc(1 + var(--miclevel) * .1));transition:opacity .1s,transform .1s}
+.speaker{font-family:'Space Grotesk';font-size:19px;font-weight:600;letter-spacing:-.02em;margin:6px 0 4px}
+.statusline{color:var(--soft);font-size:14.5px;min-height:22px;margin-bottom:24px;text-align:center;max-width:460px;line-height:1.65;font-weight:400}
+
+.captions{width:100%;max-width:640px;border-radius:24px;padding:20px;height:290px;overflow-y:auto;
+  display:flex;flex-direction:column;gap:12px;margin-bottom:22px;scroll-behavior:smooth}
+.captions.hidden-cc{display:none}
+.bubble{max-width:86%;padding:13px 17px;border-radius:19px;font-size:15.5px;line-height:1.65;animation:pop .28s ease}
+@keyframes pop{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.b-them{align-self:flex-start;background:rgba(255,255,255,.065);border:1px solid var(--stroke);border-bottom-left-radius:7px}
+.b-me{align-self:flex-end;background:linear-gradient(100deg,rgba(139,92,246,.26),rgba(34,211,238,.17));border:1px solid rgba(139,92,246,.32);border-bottom-right-radius:7px}
+.who{display:block;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:#b9b9d0;margin-bottom:5px;font-weight:600}
+.cc-toggle{background:none;border:1px solid var(--stroke);color:var(--soft);border-radius:999px;padding:9px 16px;
+  font-family:inherit;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:.16s;margin-bottom:22px}
+.cc-toggle:hover{color:var(--txt);border-color:var(--stroke-hi)}
+.endbtn{border:0;border-radius:999px;padding:17px 34px;font-family:'Space Grotesk';font-size:14.5px;font-weight:600;cursor:pointer;
+  background:rgba(244,63,94,.13);border:1px solid rgba(244,63,94,.42);color:#fda4af;display:inline-flex;align-items:center;gap:10px;transition:.16s}
+.endbtn:hover{background:rgba(244,63,94,.22)}
+
+/* ---- panneau de problème ---- */
+.problem{width:100%;max-width:640px;border-radius:20px;padding:20px;margin-bottom:22px;
+  background:rgba(244,63,94,.09);border:1px solid rgba(244,63,94,.34)}
+.problem h4{margin:0 0 9px;font-family:'Space Grotesk';font-size:15.5px;color:#fecdd3;font-weight:600}
+.problem div{font-size:14px;line-height:1.7;color:#fde2e6;font-weight:400}
+.problem p{margin:0 0 8px}
+.problem .code{font-family:ui-monospace,monospace;font-size:10px;color:rgba(253,164,175,.4);margin-top:11px;word-break:break-all}
+.problem button{margin-top:12px;background:rgba(244,63,94,.24);border:1px solid rgba(244,63,94,.5);color:#fff;
+  border-radius:12px;padding:10px 17px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+
+/* ---- débrief ---- */
+.modal{position:fixed;inset:0;z-index:120;background:rgba(4,4,9,.82);backdrop-filter:blur(16px);
+  display:none;align-items:center;justify-content:center;padding:18px}
+.modal.on{display:flex}
+.sheet{width:100%;max-width:600px;max-height:90vh;overflow-y:auto;border-radius:28px;
+  background:rgba(15,15,24,.95);border:1px solid var(--stroke-hi);box-shadow:0 40px 100px -24px rgba(0,0,0,.95)}
+.sheet-head{padding:34px 30px 26px;text-align:center;border-bottom:1px solid var(--stroke);position:relative;overflow:hidden}
+.sheet-head::after{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--violet),var(--cyan),var(--pink))}
+.score{font-family:'Space Grotesk';font-size:54px;font-weight:700;letter-spacing:-.045em;line-height:1;margin-bottom:8px}
+.sheet-head h3{font-family:'Space Grotesk';font-size:22px;margin:0 0 8px;letter-spacing:-.025em;font-weight:600}
+.sheet-head p{margin:0;color:var(--soft);font-size:15px;line-height:1.7;font-weight:400}
+.sheet-body{padding:24px 30px 30px;display:flex;flex-direction:column;gap:18px}
+.sec{border-radius:19px;padding:19px 21px;background:rgba(255,255,255,.035);border:1px solid var(--stroke)}
+.sec h4{margin:0 0 13px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);font-weight:600;display:flex;align-items:center;gap:8px}
+.fix{padding:12px 0;border-bottom:1px solid rgba(255,255,255,.055)}
+.fix:last-child{border:0;padding-bottom:0}
+.fix .bad{color:#fca5a5;font-size:14px;text-decoration:line-through;text-decoration-color:rgba(252,165,165,.4)}
+.fix .good{color:#86efac;font-size:14.5px;font-weight:500;margin-top:4px;display:flex;align-items:center;gap:7px}
+.fix .why{color:var(--muted);font-size:13px;margin-top:6px;font-weight:400;line-height:1.6}
+.vocab{display:flex;flex-wrap:wrap;gap:8px}
+.vchip{background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.3);border-radius:12px;padding:9px 13px;font-size:13.5px}
+.vchip b{font-weight:600}
+.vchip span{color:#b9b9d0;font-size:12.5px;font-weight:400}
+.meter{height:6px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden;margin:10px 0 11px}
+.meter i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--violet),var(--cyan))}
+.sec p{margin:0;font-size:14.5px;line-height:1.75;color:var(--soft);font-weight:400}
+.sec .goal{display:flex;align-items:flex-start;gap:10px;font-size:14.5px;padding:7px 0;line-height:1.5}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:4px}
+.btn{border:0;border-radius:16px;padding:16px;font-family:'Space Grotesk';font-size:13.5px;font-weight:600;cursor:pointer;transition:.16s}
+.btn-p{background:linear-gradient(100deg,var(--violet),var(--cyan));color:#0a0a12}
+.btn-s{background:rgba(255,255,255,.06);border:1px solid var(--stroke);color:var(--txt)}
+.btn-s:hover{background:rgba(255,255,255,.11)}
+.linkbtn{background:none;border:0;color:var(--soft);font-family:inherit;font-size:12.5px;cursor:pointer;padding:12px;width:100%}
+.linkbtn:hover{color:var(--txt)}
+.spinner{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.12);border-top-color:var(--cyan);animation:spin .8s linear infinite;margin:34px auto}
+.hidden{display:none !important}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:99px}
+.warn{border-radius:18px;padding:16px 18px;margin-bottom:18px;background:rgba(251,191,36,.09);border:1px solid rgba(251,191,36,.34);
+  font-size:14px;line-height:1.7;color:#fde68a;font-weight:400}
+.warn b{font-weight:600;color:#fef3c7}
+</style>
+</head>
+<body>
+
+<a href="https://mydidactikstories.com/simulateurs.html" style="position:fixed;top:14px;left:14px;z-index:9999;display:inline-flex;align-items:center;gap:6px;font-family:'Inter',system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#e2e2ec;background:rgba(20,20,30,.55);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:8px 14px;border-radius:999px;text-decoration:none">← MyDidactikStories</a>
+
+<div class="bg-wrap"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
+<div class="grain"></div>
+
+<div class="shell">
+
+  <header>
+    <div class="logo">
+      <div class="logo-mark"><i data-lucide="audio-lines" style="width:21px;height:21px;color:#0a0a12"></i></div>
+      <div>
+        <h1>Language Lab</h1>
+        <p>Appels en langue étrangère</p>
+      </div>
+    </div>
+    <span id="live-pill" class="pill pill-live hidden"><span class="dot"></span> <span id="timer">00:00</span></span>
+  </header>
+
+  <div id="inapp" class="warn hidden">
+    <b>Le micro ne fonctionnera pas ici.</b><br>
+    Cette page est ouverte dans le navigateur intégré d'une application (LinkedIn, Facebook…). Ouvre-la dans Safari ou Chrome :
+    menu <b>⋯</b> en haut → « Ouvrir dans le navigateur ».
+    <button onclick="copyLink(this)" style="margin-top:11px;background:rgba(251,191,36,.2);border:1px solid rgba(251,191,36,.45);color:#fef3c7;border-radius:11px;padding:9px 15px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">Copier le lien</button>
+  </div>
+
+  <!-- ═════════ ÉCRAN 1 : CONFIGURATION ═════════ -->
+  <section id="screen-setup">
+    <div class="hero">
+      <span class="eyebrow"><i data-lucide="sparkles" style="width:13px;height:13px"></i> Démo · conversation vocale en temps réel</span>
+      <h2>Parle une langue.<br><span class="grad">Pour de vrai.</span></h2>
+      <p class="sub">Tu passes un vrai appel téléphonique. En face, quelqu'un qui répond à ce que tu dis — pas à un script. Et à la fin, on te dit ce qui a marché.</p>
+    </div>
+
+    <div class="selectors">
+      <div class="field glass" id="f-langue">
+        <div class="field-label"><i data-lucide="languages" style="width:13px;height:13px"></i> Langue</div>
+        <button class="dd-btn" onclick="toggleDD('langue')">
+          <span class="val"><span class="flag" id="v-langue-flag"></span><span class="txt" id="v-langue"></span></span>
+          <i data-lucide="chevron-down" class="chev" style="width:17px;height:17px"></i>
+        </button>
+        <div class="dd-panel hidden" id="p-langue"></div>
+      </div>
+
+      <div class="field glass" id="f-niveau">
+        <div class="field-label"><i data-lucide="bar-chart-3" style="width:13px;height:13px"></i> Niveau</div>
+        <button class="dd-btn" onclick="toggleDD('niveau')">
+          <span class="val"><span class="txt" id="v-niveau"></span></span>
+          <i data-lucide="chevron-down" class="chev" style="width:17px;height:17px"></i>
+        </button>
+        <div class="dd-panel hidden" id="p-niveau"></div>
+      </div>
+
+      <div class="field glass locked" id="f-scenario" title="Disponible prochainement">
+        <div class="field-label"><i data-lucide="phone-call" style="width:13px;height:13px"></i> Scénario</div>
+        <button class="dd-btn" onclick="toggleDD('scenario')">
+          <span class="val"><span class="txt" id="v-scenario"></span></span>
+          <i data-lucide="lock" class="chev" style="width:15px;height:15px"></i>
+        </button>
+        <div class="dd-panel hidden" id="p-scenario"></div>
+      </div>
+    </div>
+
+    <div class="mission glass" id="mission-card">
+      <div class="t"><i data-lucide="target" style="width:13px;height:13px"></i> <span id="mission-titre"></span></div>
+      <ul id="mission-liste"></ul>
+    </div>
+
+    <button class="cta" onclick="demarrer()">
+      <i data-lucide="phone" style="width:19px;height:19px"></i> <span id="cta-label">Passer l'appel</span>
+    </button>
+    <p class="footnote">Ton micro est demandé au moment de l'appel. Rien n'est enregistré.</p>
+  </section>
+
+  <!-- ═════════ ÉCRAN 2 : APPEL ═════════ -->
+  <section id="screen-call" class="call hidden">
+    <div class="callbar">
+      <span class="chip glass"><span class="k">Langue</span> <span id="c-langue"></span></span>
+      <span class="chip glass"><span class="k">Niveau</span> <span id="c-niveau"></span></span>
+      <span class="chip glass"><span class="k">Scénario</span> <span id="c-scenario"></span></span>
+    </div>
+
+    <div class="orb-stage">
+      <div class="ring r1"></div>
+      <div class="ring r2"></div>
+      <div class="mic-ring"></div>
+      <div class="orb-halo"></div>
+      <div class="orb"><div class="orb-inner"></div></div>
+    </div>
+    <div class="speaker" id="c-persona"></div>
+    <div class="statusline" id="c-status"></div>
+
+    <div id="problem" class="problem hidden">
+      <h4 id="problem-t"></h4>
+      <div id="problem-b"></div>
+      <div id="problem-a"></div>
+      <div class="code" id="problem-c"></div>
+    </div>
+
+    <div class="captions glass" id="captions"></div>
+    <button class="cc-toggle" onclick="toggleCC()"><i data-lucide="captions" style="width:14px;height:14px"></i> <span id="cc-label">Masquer les sous-titres</span></button>
+    <button class="endbtn" onclick="terminer()"><i data-lucide="phone-off" style="width:17px;height:17px"></i> Raccrocher</button>
+  </section>
+</div>
+
+<!-- ═════════ DÉBRIEF ═════════ -->
+<div class="modal" id="modal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div class="score grad" id="d-score"></div>
+      <h3 id="d-titre"></h3>
+      <p id="d-message"></p>
+    </div>
+    <div class="sheet-body" id="d-body"></div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+ *
+ *   ███  CONFIGURATION  ███
+ *
+ *   Ajouter une langue = ajouter un bloc dans LANGUES.
+ *   Ajouter un scénario = ajouter un bloc dans SCENARIOS (actif:false le grise).
+ *   Rien à toucher en dessous de « FIN DE LA CONFIGURATION ».
+ *
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+const LIVE_MODEL = "gemini-3.1-flash-live-preview";
+
+/* ---------------------------------------------------------------------------
+ *  LANGUES
+ *  codeLangue   : code BCP-47 envoyé à Gemini.
+ *  codeSecours  : utilisé automatiquement si Gemini refuse le premier
+ *                 (la liste des variantes régionales acceptées n'est pas
+ *                 publiée ; nl-BE peut ne pas être reconnu selon les versions).
+ *  voix         : masculines Charon / Puck / Fenrir · féminines Kore / Aoede / Leda
+ *  consigne     : LA règle de langue, injectée telle quelle dans le prompt.
+ * ------------------------------------------------------------------------- */
+const LANGUES = [
+{
+    id:'en',
+    label:"English",
+    sousTitre:"Anglais britannique",
+    drapeau:"🇬🇧",
+    codeLangue:"en-GB",
+    codeSecours:"en-US",
+    nomFr:"anglais",
+    persona:{ prenom:"Emma", role:"hôtesse d'accueil", voix:"Aoede" },
+    lieu:{ nom:"The Copper Fig", type:"bistrot", ville:"Londres" },
+    consigne:`LANGUE : tu parles UNIQUEMENT anglais britannique, du début à la fin. Même si ton interlocuteur te parle en français, tu réponds en anglais — tu peux ralentir, reformuler plus simplement, répéter, mais tu ne bascules JAMAIS en français et tu ne traduis pas. Utilise un anglais britannique naturel de service client : "Good afternoon", "Certainly", "Let me just check for you", "Brilliant", "Lovely", "Not a problem at all". Évite les tournures américaines ("Sure thing", "You bet", "Have a great one").`,
+    exemplesOuverture:`"Good afternoon, The Copper Fig, Emma speaking — how can I help?"`,
+},
+{
+    id:'nl-be',
+    label:"Nederlands (België)",
+    sousTitre:"Néerlandais de Belgique · Flamand",
+    drapeau:"🇧🇪",
+    codeLangue:"nl-BE",
+    codeSecours:"nl-NL",
+    nomFr:"néerlandais de Belgique",
+    persona:{ prenom:"Wout", role:"gérant de salle", voix:"Puck" },
+    lieu:{ nom:"De Zwarte Zwaan", type:"brasserie", ville:"Gand" },
+    consigne:`LANGUE : tu parles UNIQUEMENT néerlandais, et plus précisément du NÉERLANDAIS DE BELGIQUE (Vlaams), JAMAIS du néerlandais des Pays-Bas. C'est essentiel. Même si ton interlocuteur te parle en français, tu réponds en néerlandais — tu peux ralentir, reformuler, répéter, mais tu ne bascules JAMAIS en français.
+
+MARQUEURS FLAMANDS À UTILISER : "Goeiedag" / "Goeiemiddag" plutôt que "Hallo" au téléphone. Le vouvoiement en "u" est la norme avec un client, même jeune. "Alstublieft", "In orde", "Dat komt in orde", "Kijk", "Allez", "Voilà", "Merci" (les Flamands disent souvent "merci" pour "dank u"). "Op welke naam mag ik noteren ?", "Voor hoeveel personen ?", "Tot dan !". Tu paies par "Bancontact" ou "met de kaart". Tu dis "gsm" et pas "mobieltje", "frieten" et pas "patat", "friture"/"frituur" et pas "snackbar", "croque-monsieur" et pas "tosti". Les prix sont en euros, les heures se disent "half acht", "kwart voor negen".
+
+MOTS DES PAYS-BAS À NE JAMAIS UTILISER : "hartstikke", "joh", "leuk hoor", "gezellig hoor", "pinnen", "mobieltje", "patat", "tosti", "jongens", "prima hoor", "doei". Tu ne dis jamais "doei" pour dire au revoir : tu dis "tot dan", "tot straks", "een fijne dag nog".`,
+    exemplesOuverture:`"Goeiemiddag, De Zwarte Zwaan, u spreekt met Wout — waarmee kan ik u helpen ?"`,
+},
+];
+
+/* ---------------------------------------------------------------------------
+ *  NIVEAUX  —  ils règlent le débit, la longueur et le nombre d'imprévus.
+ * ------------------------------------------------------------------------- */
+const NIVEAUX = [
+{
+    id:'debutant',
+    label:"Débutant",
+    sousTitre:"A1 · A2 — on t'aide beaucoup",
+    consigne:`NIVEAU DE L'APPRENANT — DÉBUTANT (A1/A2). Tu adaptes énormément ta façon de parler :
+- Tu parles LENTEMENT, en articulant, avec des pauses nettes entre les phrases.
+- Tes répliques font 1 phrase, 8 mots maximum. Jamais deux idées d'un coup.
+- Tu n'utilises que du vocabulaire très courant et le présent. Pas d'expressions idiomatiques, pas d'humour, pas d'ironie.
+- Tu poses UNE question fermée à la fois, dans un ordre prévisible.
+- Si ton interlocuteur hésite, cherche un mot, ou se trompe : tu attends, puis tu proposes le mot toi-même, calmement, et tu continues. Tu ne corriges jamais frontalement, tu reformules correctement en répétant : il entend la bonne version sans être repris.
+- Si tu ne comprends pas, tu redemandes très simplement et tu proposes deux choix ("Two people, or four people ?").
+- Tu es chaleureux et patient. Tu ne crées AUCUNE complication : tout ce qui est demandé est disponible.`
+},
+{
+    id:'intermediaire',
+    label:"Intermédiaire",
+    sousTitre:"B1 · B2 — rythme naturel",
+    consigne:`NIVEAU DE L'APPRENANT — INTERMÉDIAIRE (B1/B2). Tu parles à un rythme normal, un peu posé :
+- Tes répliques font 1 à 2 phrases naturelles.
+- Vocabulaire courant du métier, quelques tournures idiomatiques simples.
+- Tu poses tes questions normalement, sans les découper.
+- Si ton interlocuteur fait une faute, tu ne la relèves pas : tu reformules naturellement la bonne version dans ta réponse.
+- UNE seule complication dans l'appel : le créneau demandé n'est pas disponible, et tu proposes une alternative. Tu attends qu'il négocie.
+- Tu es courtois et efficace, comme un vrai professionnel un peu pressé.`
+},
+{
+    id:'avance',
+    label:"Avancé",
+    sousTitre:"C1 · C2 — vitesse réelle",
+    consigne:`NIVEAU DE L'APPRENANT — AVANCÉ (C1/C2). Tu parles à vitesse réelle, comme avec un natif :
+- Débit normal, contractions, expressions idiomatiques, petites hésitations naturelles.
+- Tes répliques font 1 à 3 phrases, avec parfois deux informations enchaînées.
+- DEUX complications au cours de l'appel : d'abord le créneau demandé est complet, puis une contrainte supplémentaire que tu amènes plus tard (une table uniquement en terrasse, un service en deux temps, un acompte pour les grandes tablées, la fermeture de la cuisine à une certaine heure...). Tu ne les annonces pas d'un bloc.
+- Tu peux glisser une remarque de small talk courte (la météo, l'affluence du week-end) pour tester la capacité à rebondir.
+- Tu restes professionnel et cordial, jamais désagréable.`
+},
+];
+
+/* ---------------------------------------------------------------------------
+ *  SCÉNARIOS  —  actif:false grise l'entrée et ajoute le badge « Bientôt ».
+ * ------------------------------------------------------------------------- */
+const SCENARIOS = [
+{
+    id:'reservation',
+    actif:true,
+    label:"Appel de réservation",
+    sousTitre:"Réserver une table au restaurant",
+    // Ce que l'apprenant doit obtenir. Sert au briefing ET à la correction.
+    mission:{
+        titre:"Ta mission",
+        points:[
+            "Réserver une table pour <strong>4 personnes</strong>, <strong>samedi soir vers 20h</strong>",
+            "Signaler qu'une personne est <strong>végétarienne</strong>",
+            "Demander <strong>jusqu'à quelle heure la cuisine sert</strong>",
+            "Repartir avec la réservation confirmée <strong>à ton nom</strong>",
+        ],
+        // Formulation envoyée au correcteur : une ligne par objectif vérifiable.
+        objectifs:[
+            "Réserver une table pour 4 personnes",
+            "Le samedi soir, vers 20h (ou un créneau alternatif accepté)",
+            "Signaler qu'une personne est végétarienne",
+            "Demander l'heure de fermeture de la cuisine",
+            "Donner son nom pour la réservation",
+        ],
+    },
+    role:"un client qui appelle pour réserver",
+    instruction:`Tu es {{PRENOM}}, {{ROLE}} de {{LIEU}}, un{{E}} {{TYPE}} à {{VILLE}}. Tu décroches le téléphone : quelqu'un appelle pour réserver une table.
+
+{{LANGUE}}
+
+{{NIVEAU}}
+
+TON ÉTABLISSEMENT (invente librement et reste cohérent avec ce que tu as déjà dit) :
+- Tu connais ta salle : une trentaine de couverts, quelques tables en terrasse, une grande table au fond pour les groupes.
+- Le samedi soir est le service le plus chargé de la semaine. Les créneaux de 19h30 et 20h partent en premier.
+- La cuisine ferme à 22h en semaine, 22h30 le week-end. Le bar reste ouvert plus tard.
+- Il y a toujours au moins un plat végétarien à la carte, et le chef peut adapter la plupart des entrées.
+- Pour une réservation, tu as besoin de QUATRE informations : le nombre de personnes, le jour, l'heure, et le nom. Tu les demandes une par une, dans l'ordre qui te semble naturel, jamais toutes d'un coup.
+
+DÉROULEMENT : C'est TOI qui décroches, IMMÉDIATEMENT, sans attendre. Tu ouvres par une formule d'accueil professionnelle du genre : {{OUVERTURE}} (varie librement dans cet esprit). Ensuite tu réagis à ce que dit RÉELLEMENT ton interlocuteur, tour par tour. Tu ne joues jamais son rôle à sa place et tu n'inventes jamais ce qu'il aurait dit.
+
+RÈGLE D'OR DE L'EXERCICE : la personne au bout du fil apprend ta langue. Ton rôle n'est pas de la piéger, mais de lui faire vivre un vrai appel. Tu réponds à TOUT ce qu'elle demande, même hors sujet (le parking, l'accès en tram, les allergies, la carte des vins, une chaise haute pour un bébé) : tu inventes une réponse plausible et tu reviens tranquillement à la réservation. Tu n'es JAMAIS bloqué par une question inattendue.
+
+SI TU NE COMPRENDS PAS : tu redemandes poliment, comme au téléphone ("Sorry, could you say that again ?"). Si tu ne comprends toujours pas au bout de deux tentatives, tu proposes toi-même une hypothèse ("So that's for four people, is that right ?") pour débloquer la conversation. Tu ne restes jamais coincé sur une incompréhension plus de deux tours.
+
+QUAND LA RÉSERVATION EST COMPLÈTE : tu la récapitules à voix haute — nombre de personnes, jour, heure, nom — et tu confirmes. C'est le signal que l'exercice est réussi.
+
+CONFIDENTIALITÉ DU RÔLE : tu es un être humain qui travaille dans ce restaurant. Tu n'es pas une intelligence artificielle, tu ne parles jamais de prompt, de modèle, d'exercice ou de simulation. Si on te demande si tu es une IA, tu réponds avec un naturel amusé et tu reviens à la réservation.`,
+},
+{ id:'info',        actif:false, label:"Appel besoin d'info",  sousTitre:"Obtenir un renseignement précis" },
+{ id:'vente',       actif:false, label:"Appel de vente",       sousTitre:"Présenter et convaincre" },
+{ id:'prospection', actif:false, label:"Appel de prospection", sousTitre:"Décrocher un rendez-vous à froid" },
+];
+
+/* ---------------------------------------------------------------------------
+ *  RÈGLES COMMUNES — ajoutées automatiquement à la fin de chaque prompt.
+ *  C'est ici que vit le garde-fou anti-troll et le mécanisme de raccrochage.
+ * ------------------------------------------------------------------------- */
+const REGLES_COMMUNES = `LONGUEUR DE TES RÉPLIQUES — RÈGLE LA PLUS IMPORTANTE : c'est un appel téléphonique, pas un monologue. Tu développes UNE seule idée, tu poses UNE seule question, puis tu t'arrêtes et tu laisses parler. Tu ne fais JAMAIS d'énumération et tu ne poses jamais deux questions d'affilée. Si tu sens que tu pars dans une tirade, tu te coupes et tu rends la parole.
+
+STYLE : tu parles comme au téléphone, pas comme un texte écrit : phrases courtes, petites hésitations naturelles, formules de service. Jamais de listes, jamais de ton robotique. Tu ne prononces jamais d'emoji ni de ponctuation à voix haute.
+
+SI ON TE MANQUE DE RESPECT : si ton interlocuteur est vulgaire, insultant, se moque de toi, ou dit n'importe quoi pour s'amuser, tu restes professionnel une première fois et tu recadres poliment mais fermement. À la DEUXIÈME provocation, tu mets fin à l'appel, courtoisement et sans t'énerver, dans l'esprit de : "I'm going to end the call here. Have a good day." (adapte-le à ta langue et à ton personnage, deux phrases maximum). RÈGLE ABSOLUE : tu prononces D'ABORD ta phrase de clôture à voix haute, en entier, et c'est SEULEMENT APRÈS l'avoir dite que tu appelles l'outil "raccrocher" avec motif "troll", DANS LE MÊME TOUR DE PAROLE. Dire que tu raccroches sans appeler l'outil est une ERREUR GRAVE.
+
+CE QUI N'EST PAS UN MANQUE DE RESPECT : une faute de grammaire, un mot cherché longtemps, un silence, un accent difficile, une phrase incompréhensible, un mot de français glissé au milieu, une question naïve ou hors sujet. Rien de tout cela ne justifie de raccrocher — c'est exactement ce qu'on attend de quelqu'un qui apprend. Tu restes patient et bienveillant, toujours.
+
+OUTIL "raccrocher" — TECHNIQUE ET SILENCIEUX : cet outil est un mécanisme invisible. Tu ne prononces JAMAIS le mot "raccrocher", ni "motif", ni "troll", ni "fin", ni aucune syntaxe technique. Rien de technique ne doit jamais apparaître dans ta parole : tu parles comme un humain, et tu utilises l'outil séparément, en silence.
+
+FIN NATURELLE — OBLIGATOIRE : c'est TOI qui raccroches, jamais ton interlocuteur. Dès que l'appel arrive à sa conclusion — la réservation est confirmée et récapitulée, ou bien il est clair qu'elle n'aura pas lieu — tu prononces ta formule d'au revoir À VOIX HAUTE, en entier, puis tu appelles l'outil "raccrocher" avec motif "fin" DANS LE MÊME TOUR de parole. Chaque formule d'adieu est TOUJOURS immédiatement suivie de l'appel à l'outil. Ne laisse jamais l'appel ouvert après tes adieux, et ne relance pas une nouvelle discussion une fois que tout est dit.`;
+
+/* ---------------------------------------------------------------------------
+ *  DÉBRIEF — le prompt du correcteur. {{...}} sont remplis automatiquement.
+ * ------------------------------------------------------------------------- */
+const DEBRIEF_PROMPT = `Tu es professeur de langue, exigeant sur la justesse mais toujours encourageant. Voici la transcription automatique d'un appel téléphonique simulé.
+
+L'apprenant est francophone. Il apprend {{LANGUE_FR}}, à un niveau annoncé « {{NIVEAU}} ». Il jouait {{ROLE}} et parlait à {{PRENOM}}, {{ROLE_PERSONA}} de {{LIEU}}.
+
+SA MISSION ÉTAIT :
+{{OBJECTIFS}}
+
+TRANSCRIPTION (les lignes "APPRENANT" sont ce que l'apprenant a dit) :
+{{TRANSCRIPTION}}
+
+AVERTISSEMENT IMPORTANT SUR LA TRANSCRIPTION : elle vient d'une reconnaissance vocale automatique sur un locuteur non natif, avec un accent français. Elle contient donc forcément des mots mal retranscrits. Ne corrige JAMAIS une faute qui pourrait n'être qu'une erreur de transcription (un mot isolé bizarre, une confusion entre deux mots qui se ressemblent à l'oreille). Ne relève une erreur que si elle est structurelle et que tu es certain qu'elle vient de l'apprenant : ordre des mots, temps verbal, préposition, accord, faux ami, calque du français.
+
+CALIBRAGE SELON LE NIVEAU : à un niveau débutant, l'essentiel est d'avoir osé et de s'être fait comprendre — sois large et très encourageant, ne relève que les erreurs qui gênent vraiment la compréhension. À un niveau avancé, sois nettement plus fin et exigeant, y compris sur le registre et le naturel.
+
+TU DOIS RENVOYER UNIQUEMENT UN OBJET JSON, sans texte autour, avec exactement cette forme :
+{
+  "score": 0-100,
+  "titre": "3 à 5 mots, en français, encourageant",
+  "message": "2 phrases en français qui résument l'appel, adressées à l'apprenant en le tutoyant, sans aucun accord genré",
+  "objectifs": [ { "libelle": "reprise exacte d'un objectif de la mission", "atteint": true|false } ],
+  "corrections": [ { "dit": "la phrase exacte de l'apprenant, dans la langue cible", "correct": "la version correcte", "pourquoi": "une ligne d'explication en français" } ],
+  "vocabulaire": [ { "mot": "mot ou expression dans la langue cible", "sens": "traduction ou sens en français" } ],
+  "aisance": { "note": 0-100, "commentaire": "2 phrases en français sur le débit, la longueur des réponses, la capacité à relancer et à se débrouiller quand un mot manque" },
+  "conseil": "une seule chose concrète à travailler la prochaine fois, en français"
+}
+
+RÈGLES DE REMPLISSAGE :
+- "objectifs" contient une entrée par ligne de la mission ci-dessus, dans le même ordre et avec le même libellé.
+- "corrections" : 3 à 5 entrées maximum, les plus utiles. Si l'apprenant n'a presque rien dit ou n'a fait aucune erreur exploitable, renvoie un tableau vide.
+- "vocabulaire" : 3 à 6 mots ou tournures que l'apprenant N'A PAS utilisés mais qui lui auraient servi dans cet appel précis. Pas de vocabulaire générique.
+- "score" reflète l'ensemble : mission accomplie, justesse de la langue, aisance. Un débutant qui obtient sa réservation avec des fautes mérite un bon score.
+- Tout ce qui s'adresse à l'apprenant est en FRANÇAIS, sauf les citations dans la langue cible.
+- N'utilise JAMAIS d'accord genré en parlant à l'apprenant (pas de "tu as été clair(e)") : reformule de façon neutre.
+- Si la transcription est trop courte pour juger, dis-le franchement dans "message", mets un score bas et renvoie des tableaux vides.`;
+
+/* ███ FIN DE LA CONFIGURATION — le moteur commence ici ███ */
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *   MOTEUR
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+let LANGUE = LANGUES[0];
+let NIVEAU = NIVEAUX[0];
+let SCENARIO = SCENARIOS.find(s => s.actif) || SCENARIOS[0];
+let ccVisible = true;
+
+function fill(tpl, vals){
+    let out = tpl;
+    Object.keys(vals).forEach(k => { out = out.split('{{'+k+'}}').join(vals[k]); });
+    return out;
+}
+
+function buildInstruction(){
+    const L = LANGUE, N = NIVEAU, S = SCENARIO;
+    const corps = fill(S.instruction, {
+        PRENOM: L.persona.prenom,
+        ROLE: L.persona.role,
+        LIEU: L.lieu.nom,
+        TYPE: L.lieu.type,
+        E: L.lieu.type === 'brasserie' ? 'e' : '',
+        VILLE: L.lieu.ville,
+        LANGUE: L.consigne,
+        NIVEAU: N.consigne,
+        OUVERTURE: L.exemplesOuverture,
+    });
+    return (corps + '\n\n' + REGLES_COMMUNES).replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function buildDebriefPrompt(transcript){
+    return fill(DEBRIEF_PROMPT, {
+        LANGUE_FR: LANGUE.nomFr,
+        NIVEAU: NIVEAU.label,
+        ROLE: SCENARIO.role,
+        PRENOM: LANGUE.persona.prenom,
+        ROLE_PERSONA: LANGUE.persona.role,
+        LIEU: LANGUE.lieu.nom + ' à ' + LANGUE.lieu.ville,
+        OBJECTIFS: SCENARIO.mission.objectifs.map(o => '- ' + o).join('\n'),
+        TRANSCRIPTION: transcript.join('\n'),
+    });
+}
+
+/* ---------------- sélecteurs ---------------- */
+const $ = id => document.getElementById(id);
+
+function optHtml(o, sel, dis){
+    return `<button class="dd-opt ${sel?'sel':''} ${dis?'dis':''}" ${dis?'disabled':''} data-id="${o.id}">
+        ${o.drapeau ? `<span style="font-size:19px">${o.drapeau}</span>` : ''}
+        <span><b style="font-weight:500">${o.label}</b>${o.sousTitre?`<span class="hint">${o.sousTitre}</span>`:''}</span>
+        ${dis?'<span class="soon">Bientôt</span>':''}
+    </button>`;
+}
+
+function renderSelectors(){
+    $('p-langue').innerHTML  = LANGUES.map(l => optHtml(l, l.id===LANGUE.id, false)).join('');
+    $('p-niveau').innerHTML  = NIVEAUX.map(n => optHtml(n, n.id===NIVEAU.id, false)).join('');
+    $('p-scenario').innerHTML = SCENARIOS.map(s => optHtml(s, s.id===SCENARIO.id, !s.actif)).join('');
+
+    $('p-langue').querySelectorAll('.dd-opt').forEach(b => b.onclick = () => {
+        LANGUE = LANGUES.find(l => l.id === b.dataset.id); closeDD(); renderSelectors(); });
+    $('p-niveau').querySelectorAll('.dd-opt').forEach(b => b.onclick = () => {
+        NIVEAU = NIVEAUX.find(n => n.id === b.dataset.id); closeDD(); renderSelectors(); });
+
+    $('v-langue').textContent = LANGUE.label;
+    $('v-langue-flag').textContent = LANGUE.drapeau;
+    $('v-niveau').textContent = NIVEAU.label;
+    $('v-scenario').textContent = SCENARIO.label;
+
+    $('mission-titre').textContent = SCENARIO.mission.titre;
+    $('mission-liste').innerHTML = SCENARIO.mission.points.map(p => `<li>${p}</li>`).join('');
+}
+
+window.toggleDD = (quel) => {
+    const f = $('f-' + quel);
+    if(f.classList.contains('locked')) return;
+    const dejaOuvert = f.classList.contains('open');
+    closeDD();
+    if(!dejaOuvert){ f.classList.add('open'); $('p-' + quel).classList.remove('hidden'); }
+};
+function closeDD(){
+    ['langue','niveau','scenario'].forEach(q => {
+        $('f-'+q).classList.remove('open');
+        $('p-'+q).classList.add('hidden');
+    });
+}
+document.addEventListener('click', e => { if(!e.target.closest('.field')) closeDD(); });
+
+window.toggleCC = () => {
+    ccVisible = !ccVisible;
+    $('captions').classList.toggle('hidden-cc', !ccVisible);
+    $('cc-label').textContent = ccVisible ? 'Masquer les sous-titres' : 'Afficher les sous-titres';
+};
+
+window.copyLink = (btn) => {
+    const url = location.href;
+    const ok = () => { btn.textContent = 'Lien copié !'; };
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(ok).catch(()=>prompt('Copie ce lien :', url));
+    else prompt('Copie ce lien :', url);
+};
+
+/* ---------------- navigation ---------------- */
+function montrer(quel){
+    $('screen-setup').classList.toggle('hidden', quel !== 'setup');
+    $('screen-call').classList.toggle('hidden', quel !== 'call');
+    window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+/* ---------------- détection navigateur intégré ---------------- */
+function isInApp(){
+    const ua = navigator.userAgent || '';
+    return /LinkedInApp|LinkedIn\/|FBAN|FBAV|FB_IAB|FBIOS|Instagram|Twitter|TikTok|musical_ly|Snapchat|Line\/|WhatsApp|GSA\/|; wv\)/i.test(ua)
+        || !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+        || window.isSecureContext === false;
+}
+function techDetail(extra){
+    const ua = navigator.userAgent || '';
+    const nav = /Chrome\//.test(ua) ? 'Chrome' : (/Firefox\//.test(ua) ? 'Firefox' : (/Safari\//.test(ua) ? 'Safari' : 'inconnu'));
+    return [extra, nav, location.protocol, 'secure=' + (window.isSecureContext !== false),
+            'mic=' + !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)].filter(Boolean).join(' · ');
+}
+function hideProblem(){ $('problem').classList.add('hidden'); }
+function showProblem(titre, html, code, actions){
+    $('problem-t').textContent = titre;
+    $('problem-b').innerHTML = html;
+    $('problem-c').textContent = code ? 'code : ' + code : '';
+    $('problem-a').innerHTML = '';
+    (actions||[]).forEach(a => {
+        const b = document.createElement('button');
+        b.textContent = a.label; b.onclick = a.onClick;
+        $('problem-a').appendChild(b);
+    });
+    $('problem').classList.remove('hidden');
+}
+
+/* ---------------- état de l'appel ---------------- */
+let callActive=false, liveSession=null, micStream=null, inCtx=null, procNode=null, muteNode=null;
+let outCtx=null, playHead=0, activeSources=[], analyser=null, rafId=null;
+let transcript=[], hungUp=null, startedAt=0, timerId=null;
+let curMe='', curThem='', nodeMe=null, nodeThem=null;
+let essaiCodeSecours=false;
+
+const setStatus = t => { $('c-status').textContent = t; };
+
+function setLevel(v){ document.documentElement.style.setProperty('--level', v.toFixed(3)); }
+function setMicLevel(v){ document.documentElement.style.setProperty('--miclevel', v.toFixed(3)); }
+
+function bulle(qui, texte){
+    const d = document.createElement('div');
+    d.className = 'bubble ' + (qui === 'me' ? 'b-me' : 'b-them');
+    d.innerHTML = `<span class="who"></span><span class="body"></span>`;
+    d.querySelector('.who').textContent = qui === 'me' ? 'Toi' : LANGUE.persona.prenom;
+    d.querySelector('.body').textContent = texte;
+    $('captions').appendChild(d);
+    $('captions').scrollTop = $('captions').scrollHeight;
+    return d;
+}
+
+function tick(){
+    const s = Math.floor((Date.now() - startedAt)/1000);
+    $('timer').textContent = String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+}
+
+/* ---------------- audio ---------------- */
+function primeAudio(){
+    try {
+        if(navigator.audioSession){ try { navigator.audioSession.type = 'play-and-record'; } catch(e){} }
+        if(!outCtx || outCtx.state === 'closed'){
+            outCtx = new (window.AudioContext||window.webkitAudioContext)({ sampleRate: 24000 });
+        }
+        playHead = 0; activeSources = [];
+        analyser = outCtx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.connect(outCtx.destination);
+        const b = outCtx.createBuffer(1,1,24000);
+        const s = outCtx.createBufferSource();
+        s.buffer = b; s.connect(outCtx.destination); s.start(0);
+        if(outCtx.state === 'suspended') outCtx.resume();
+    } catch(e){ console.error('primeAudio', e); }
+}
+function boucleNiveau(){
+    if(!analyser){ rafId = requestAnimationFrame(boucleNiveau); return; }
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteTimeDomainData(data);
+    let somme = 0;
+    for(let i=0;i<data.length;i++){ const v = (data[i]-128)/128; somme += v*v; }
+    const rms = Math.sqrt(somme/data.length);
+    setLevel(Math.min(1, rms * 3.4));
+    rafId = requestAnimationFrame(boucleNiveau);
+}
+function b64ToBuf(b64){ const bin=atob(b64); const b=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) b[i]=bin.charCodeAt(i); return b.buffer; }
+function bufToB64(buf){ let bin=''; const b=new Uint8Array(buf); const c=0x8000; for(let i=0;i<b.length;i+=c){ bin+=String.fromCharCode.apply(null,b.subarray(i,i+c)); } return btoa(bin); }
+function floatTo16(f32){ const buf=new ArrayBuffer(f32.length*2); const v=new DataView(buf); let o=0; for(let i=0;i<f32.length;i++,o+=2){ let s=Math.max(-1,Math.min(1,f32[i])); v.setInt16(o, s<0? s*0x8000 : s*0x7FFF, true); } return buf; }
+
+async function acquireMic(){
+    const confort = { audio:{ channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true } };
+    try { return await navigator.mediaDevices.getUserMedia(confort); }
+    catch(err){
+        const n = (err && err.name) || '';
+        if(n==='OverconstrainedError' || n==='ConstraintNotSatisfiedError') return await navigator.mediaDevices.getUserMedia({ audio:true });
+        throw err;
+    }
+}
+async function aUnMicro(){
+    try {
+        if(!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return null;
+        return (await navigator.mediaDevices.enumerateDevices()).some(d => d.kind === 'audioinput');
+    } catch(e){ return null; }
+}
+
+/* ---------------- démarrage de l'appel ---------------- */
+window.demarrer = () => {
+    primeAudio();          // doit rester DANS le geste utilisateur (Safari)
+    montrer('call');
+    $('c-langue').textContent = LANGUE.label;
+    $('c-niveau').textContent = NIVEAU.label;
+    $('c-scenario').textContent = SCENARIO.label;
+    $('c-persona').textContent = LANGUE.persona.prenom + ' · ' + LANGUE.lieu.nom;
+    $('captions').innerHTML = '';
+    hideProblem();
+    essaiCodeSecours = false;
+    lancerAppel();
+};
+
+async function lancerAppel(){
+    if(callActive) return;
+    hideProblem();
+    const P = LANGUE.persona;
+
+    if(window.isSecureContext === false){
+        showProblem("Cette page doit être ouverte en HTTPS",
+            `<p>Les navigateurs n'autorisent le micro que sur une adresse sécurisée. Là, la page tourne en <b>${location.protocol}</b></p>`,
+            techDetail('insecure-context'), [{ label:'Retour', onClick:()=>montrer('setup') }]);
+        return;
+    }
+    if(isInApp()){
+        $('inapp').classList.remove('hidden');
+        showProblem("Ouverte dans une application, pas dans un navigateur",
+            `<p>LinkedIn, Facebook ou Instagram ouvrent les liens dans une fenêtre interne qui interdit l'accès au micro.</p>
+             <p>Menu <b>⋯</b> en haut → <b>« Ouvrir dans le navigateur »</b>, ou copie le lien dans Safari ou Chrome.</p>`,
+            techDetail('in-app'), [{ label:'Copier le lien', onClick:(e)=>copyLink(e.target) }]);
+        return;
+    }
+
+    setStatus("Autorise le micro dans la fenêtre de ton navigateur…");
+    try { micStream = await acquireMic(); }
+    catch(err){
+        const n = (err && err.name) || '';
+        const isSafari = /Safari\//.test(navigator.userAgent) && !/Chrome\//.test(navigator.userAgent);
+        const recharger = [{ label:'Recharger la page', onClick:()=>location.reload() }];
+        const micPresent = await aUnMicro();
+        if(micPresent === false || n==='NotFoundError' || n==='DevicesNotFoundError'){
+            showProblem("Aucun micro n'est branché",
+                `<p>Ton appareil ne présente aucun micro à cette page. Branche un casque ou un micro USB, puis recharge.</p>`, techDetail(n), recharger);
+        } else if(n==='NotAllowedError' || n==='SecurityError'){
+            showProblem("Le micro est bloqué — il faut l'autoriser",
+                isSafari
+                  ? `<p><b>1.</b> Menu <b>Safari</b> → <b>Réglages pour ce site web…</b> → <b>Microphone</b> → <b>Autoriser</b>.</p>
+                     <p><b>2.</b> Si ça reste bloqué :  → <b>Réglages Système</b> → <b>Confidentialité et sécurité</b> → <b>Microphone</b> → active <b>Safari</b>.</p>`
+                  : `<p>Clique sur l'icône <b>🔒</b> à gauche de l'adresse du site → mets le <b>Microphone</b> sur <b>Autoriser</b> → recharge la page.</p>`,
+                techDetail(n), recharger);
+        } else if(n==='NotReadableError' || n==='TrackStartError'){
+            showProblem("Le micro est déjà utilisé",
+                `<p>Une autre application tient ton micro (Zoom, Teams, Meet…). Ferme-la complètement, puis recharge cette page.</p>`, techDetail(n), recharger);
+        } else {
+            showProblem("Le micro n'a pas pu démarrer",
+                `<p>Recharge la page et réessaie. Vérifie qu'aucune autre application n'utilise le micro.</p>`, techDetail(n || String(err)), recharger);
+        }
+        arreter(' ');
+        return;
+    }
+
+    // Trois causes très différentes se cachaient derrière un seul message :
+    // page ouverte sans serveur, clé absente, clé refusée. On les sépare.
+    let token = null;
+    try {
+        setStatus("Connexion…");
+        const r = await fetch('/api/token', { method:'POST' });
+        if(!r.ok){
+            let corps = {};
+            try { corps = await r.json(); } catch(e){}
+            const err = corps.error || ('http_' + r.status);
+            if(err === 'cle_absente'){
+                showProblem("Le serveur tourne, mais il n'a pas de clé Gemini",
+                    `<p>Ouvre le fichier <b>cle-api.txt</b>, dans le même dossier que <b>server.js</b>, et colle ta clé dedans. Elle se récupère sur <b>aistudio.google.com/apikey</b> et commence par <b>AIza</b>.</p>
+                     <p>Enregistre, puis dans le Terminal : <b>Ctrl+C</b> pour arrêter le serveur, et <b>npm start</b> pour le relancer. Il doit afficher « Clé Gemini chargée ».</p>`,
+                    'cle_absente', [{ label:'Retour', onClick:()=>montrer('setup') }]);
+            } else if(err === 'cle_invalide'){
+                showProblem("La clé Gemini a été refusée",
+                    `<p>Le serveur a bien trouvé une clé, mais Google l'a rejetée. Vérifie qu'elle est complète et toujours active sur <b>aistudio.google.com/apikey</b>.</p>
+                     <p>Le détail exact de l'erreur s'affiche aussi dans ton Terminal.</p>`,
+                    corps.detail || err, [{ label:'Retour', onClick:()=>montrer('setup') }]);
+            } else {
+                showProblem("Le serveur a répondu, mais l'appel a échoué",
+                    `<p>Regarde ton Terminal : la cause exacte y est affichée.</p>`,
+                    corps.detail || err, [{ label:'Retour', onClick:()=>montrer('setup') }]);
+            }
+            arreter(' ');
+            return;
+        }
+        token = (await r.json()).token;
+    } catch(e){
+        // fetch a échoué : il n'y a personne au bout du fil.
+        const enLocal = /^file:/.test(location.protocol);
+        showProblem(enLocal ? "Cette page a été ouverte sans serveur" : "Le serveur ne répond pas",
+            enLocal
+              ? `<p>Tu as ouvert le fichier directement (<b>file://</b>). L'écran de réglages s'affiche, mais il n'y a aucun serveur pour créer le jeton Gemini.</p>
+                 <p>Dans le Terminal, place-toi dans le dossier puis lance <b>npm start</b>, et ouvre <b>http://localhost:3000</b>.</p>`
+              : `<p>Aucune réponse sur <b>/api/token</b>. Vérifie que <b>npm start</b> tourne toujours dans ton Terminal.</p>
+                 <p>Si le site est hébergé sur Render en plan gratuit, il se réveille peut-être — attends 30 secondes et réessaie.</p>`,
+            techDetail(location.protocol), [{ label:'Retour', onClick:()=>montrer('setup') }]);
+        arreter(' ');
+        return;
+    }
+
+    setStatus("Ça sonne…");
+    transcript = []; hungUp = null;
+    if(!window.__genai) await new Promise(res => window.addEventListener('genai-ready', res, { once:true }));
+    const { GoogleGenAI, Modality } = window.__genai;
+
+    const codeUtilise = essaiCodeSecours ? (LANGUE.codeSecours || LANGUE.codeLangue) : LANGUE.codeLangue;
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: token, httpOptions:{ apiVersion:'v1alpha' } });
+        const outil = { functionDeclarations:[{
+            name:'raccrocher',
+            description:"À appeler quand tu (" + LANGUE.persona.prenom + ") mets fin à l'appel : soit parce qu'il est naturellement terminé, soit parce que ton interlocuteur a été irrespectueux.",
+            parameters:{ type:'OBJECT', properties:{ motif:{ type:'STRING', enum:['fin','troll'],
+                description:"'fin' = fin normale de l'appel, 'troll' = manque de respect répété" } }, required:['motif'] }
+        }]};
+
+        if(!outCtx || outCtx.state === 'closed') primeAudio();
+
+        liveSession = await ai.live.connect({
+            model: LIVE_MODEL,
+            callbacks:{
+                onopen: () => setStatus(LANGUE.persona.prenom + " décroche…"),
+                onmessage: onMessage,
+                onerror: (e) => { console.error('live', e); setStatus("La connexion a été interrompue. Recharge la page pour reprendre."); },
+                onclose: (e) => console.warn('close', e),
+            },
+            config:{
+                responseModalities:[Modality.AUDIO],
+                systemInstruction: buildInstruction(),
+                inputAudioTranscription:{},
+                outputAudioTranscription:{},
+                tools:[outil],
+                speechConfig:{ languageCode: codeUtilise, voiceConfig:{ prebuiltVoiceConfig:{ voiceName: LANGUE.persona.voix } } },
+            },
+        });
+
+        try { if(outCtx.state === 'suspended') await outCtx.resume(); } catch(e){}
+        if(outCtx.state !== 'running') audioBloque();
+
+        liveSession.sendClientContent({ turns:[{ role:'user', parts:[{
+            text:"(L'appel commence MAINTENANT. Tu décroches et tu parles en premier, tout de suite, avec ta formule d'accueil. N'attends pas.)" }] }], turnComplete:true });
+
+        inCtx = new (window.AudioContext||window.webkitAudioContext)({ sampleRate: 16000 });
+        if(inCtx.state === 'suspended') await inCtx.resume();
+        const src = inCtx.createMediaStreamSource(micStream);
+        procNode = inCtx.createScriptProcessor(4096,1,1);
+        muteNode = inCtx.createGain(); muteNode.gain.value = 0;
+        src.connect(procNode); procNode.connect(muteNode); muteNode.connect(inCtx.destination);
+        procNode.onaudioprocess = (ev) => {
+            if(!liveSession) return;
+            const input = ev.inputBuffer.getChannelData(0);
+            let somme = 0;
+            for(let i=0;i<input.length;i+=8){ somme += input[i]*input[i]; }
+            setMicLevel(Math.min(1, Math.sqrt(somme/(input.length/8)) * 5));
+            try { liveSession.sendRealtimeInput({ audio:{ data: bufToB64(floatTo16(input)), mimeType:'audio/pcm;rate=16000' } }); } catch(e){}
+        };
+
+        callActive = true;
+        startedAt = Date.now();
+        $('live-pill').classList.remove('hidden');
+        timerId = setInterval(tick, 1000); tick();
+        rafId = requestAnimationFrame(boucleNiveau);
+        if(outCtx.state === 'running') setStatus("Tu es en ligne. Parle quand tu veux — tu peux même couper la parole.");
+        track('appel_demarre', { langue: LANGUE.id, niveau: NIVEAU.id, scenario: SCENARIO.id, code_langue: codeUtilise });
+
+    } catch(err){
+        console.error(err);
+        // Repli automatique : certaines variantes régionales (nl-BE…) peuvent être refusées.
+        if(!essaiCodeSecours && LANGUE.codeSecours && LANGUE.codeSecours !== LANGUE.codeLangue){
+            console.warn('Code langue ' + LANGUE.codeLangue + ' refusé, repli sur ' + LANGUE.codeSecours);
+            essaiCodeSecours = true;
+            track('repli_code_langue', { langue: LANGUE.id, de: LANGUE.codeLangue, vers: LANGUE.codeSecours });
+            arreter(' ');
+            setTimeout(lancerAppel, 300);
+            return;
+        }
+        showProblem("L'appel n'a pas pu aboutir",
+            `<p>La connexion n'a pas pu être établie. C'est souvent passager.</p>
+             <p>Recharge la page et relance l'appel. Si ça recommence, réessaie dans quelques minutes.</p>`,
+            techDetail((err && err.message) || String(err)),
+            [{ label:'Recharger la page', onClick:()=>location.reload() }]);
+        arreter(' ');
+    }
+}
+
+/* ---------------- flux temps réel ---------------- */
+function onMessage(msg){
+    try {
+        const sc = msg.serverContent;
+        if(sc){
+            if(sc.modelTurn && sc.modelTurn.parts){
+                for(const p of sc.modelTurn.parts){ if(p.inlineData && p.inlineData.data) jouerPCM(p.inlineData.data); }
+            }
+            if(sc.inputTranscription && sc.inputTranscription.text) ajouter('me', sc.inputTranscription.text);
+            if(sc.outputTranscription && sc.outputTranscription.text) ajouter('them', sc.outputTranscription.text);
+            if(sc.interrupted) stopPlayback();
+            if(sc.turnComplete) cloturerTour();
+        }
+        if(msg.toolCall && msg.toolCall.functionCalls){
+            const rep = [];
+            for(const fc of msg.toolCall.functionCalls){
+                if(fc.name === 'raccrocher' && fc.args && fc.args.motif) raccrochePersonnage(fc.args.motif);
+                rep.push({ name:fc.name, id:fc.id, response:{ result:'ok' } });
+            }
+            try { liveSession.sendToolResponse({ functionResponses: rep }); } catch(e){}
+        }
+    } catch(e){ console.warn('onMessage', e); }
+}
+
+function ajouter(qui, frag){
+    if(qui === 'me'){ curMe += frag; if(!nodeMe) nodeMe = bulle('me', curMe); else nodeMe.querySelector('.body').textContent = curMe; }
+    else { curThem += frag; if(!nodeThem) nodeThem = bulle('them', curThem); else nodeThem.querySelector('.body').textContent = curThem; }
+    $('captions').scrollTop = $('captions').scrollHeight;
+}
+function cloturerTour(){
+    const dit = curThem.trim();
+    if(curMe.trim())  transcript.push('APPRENANT : "' + curMe.trim() + '"');
+    if(dit)           transcript.push(LANGUE.persona.prenom.toUpperCase() + ' : "' + dit + '"');
+    curMe=''; curThem=''; nodeMe=null; nodeThem=null;
+}
+
+function jouerPCM(b64){
+    try {
+        if(!outCtx || outCtx.state === 'closed') return;
+        if(outCtx.state === 'suspended'){ outCtx.resume().catch(()=>{}); audioBloque(); }
+        const buf = b64ToBuf(b64), view = new DataView(buf), n = Math.floor(buf.byteLength/2);
+        const f32 = new Float32Array(n);
+        for(let i=0;i<n;i++) f32[i] = view.getInt16(i*2, true)/0x8000;
+        const ab = outCtx.createBuffer(1, n, 24000); ab.getChannelData(0).set(f32);
+        const s = outCtx.createBufferSource(); s.buffer = ab;
+        if(analyser) s.connect(analyser); else s.connect(outCtx.destination);
+        const now = outCtx.currentTime; if(playHead < now) playHead = now;
+        s.start(playHead); playHead += ab.duration;
+        activeSources.push(s);
+        s.onended = () => { activeSources = activeSources.filter(x => x !== s); if(!activeSources.length) setLevel(0); };
+    } catch(e){ console.warn('jouerPCM', e); }
+}
+function stopPlayback(){ activeSources.forEach(s => { try{ s.stop(); }catch(e){} }); activeSources = []; playHead = 0; setLevel(0); }
+
+function audioBloque(){
+    setStatus("Ton navigateur bloque le son. Clique sur « Activer le son ».");
+    if($('unlock')) return;
+    const b = document.createElement('button');
+    b.id = 'unlock'; b.className = 'cc-toggle'; b.style.marginBottom = '14px';
+    b.textContent = '🔊 Activer le son';
+    b.onclick = async () => {
+        try {
+            if(!outCtx || outCtx.state === 'closed') primeAudio();
+            else { const bb=outCtx.createBuffer(1,1,24000); const s=outCtx.createBufferSource(); s.buffer=bb; s.connect(outCtx.destination); s.start(0); await outCtx.resume(); }
+        } catch(e){}
+        if(outCtx && outCtx.state === 'running'){ b.remove(); setStatus("Tu es en ligne. Parle quand tu veux."); }
+        else setStatus("Toujours pas de son. Vérifie que l'onglet n'est pas coupé et que le volume est monté.");
+    };
+    $('c-status').parentNode.insertBefore(b, $('captions'));
+}
+
+/* ---------------- fin d'appel ---------------- */
+function bipRaccrochage(){
+    try {
+        const ctx = new (window.AudioContext||window.webkitAudioContext)();
+        const beep = (f, start, dur) => {
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type='sine'; o.frequency.value=f; o.connect(g); g.connect(ctx.destination);
+            const t = ctx.currentTime + start;
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(0.2, t+0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+            o.start(t); o.stop(t+dur+0.02);
+        };
+        beep(620,0,0.16); beep(440,0.2,0.28);
+        setTimeout(()=>{ try{ ctx.close(); }catch(e){} }, 900);
+    } catch(e){}
+}
+
+function raccrochePersonnage(motif){
+    if(hungUp) return;
+    hungUp = motif;
+    let entendu = activeSources.length > 0;
+    const t0 = Date.now();
+    const attendre = () => {
+        if(activeSources.length > 0) entendu = true;
+        const dt = Date.now() - t0;
+        const joue = activeSources.length > 0;
+        const attentePremierSon = !entendu && dt < 5000;
+        if((joue || attentePremierSon) && dt < 12000){ setTimeout(attendre, 300); return; }
+        setTimeout(() => { bipRaccrochage(); setTimeout(terminer, 700); }, 500);
+    };
+    attendre();
+}
+
+function arreter(msg){
+    callActive = false;
+    if(timerId){ clearInterval(timerId); timerId = null; }
+    if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+    setLevel(0); setMicLevel(0);
+    const u = $('unlock'); if(u) u.remove();
+    $('live-pill').classList.add('hidden');
+    try { if(procNode) procNode.disconnect(); } catch(e){}
+    try { if(muteNode) muteNode.disconnect(); } catch(e){}
+    try { if(micStream) micStream.getTracks().forEach(t => t.stop()); } catch(e){}
+    try { if(inCtx) inCtx.close(); } catch(e){}
+    stopPlayback();
+    try { if(outCtx) outCtx.close(); } catch(e){}
+    try { if(liveSession) liveSession.close(); } catch(e){}
+    liveSession=null; micStream=null; inCtx=null; procNode=null; muteNode=null; outCtx=null; analyser=null;
+    if(msg !== undefined) setStatus(msg);
+}
+
+window.terminer = async () => {
+    cloturerTour();
+    const motif = hungUp;
+    const duree = startedAt ? Math.round((Date.now()-startedAt)/1000) : 0;
+    const stats = { langue:LANGUE.id, niveau:NIVEAU.id, scenario:SCENARIO.id, duree_s:duree, echanges:transcript.length };
+    arreter("Appel terminé.");
+
+    if(motif === 'troll'){
+        track('appel_termine', Object.assign({ resultat:'raccroche_par_personnage' }, stats));
+        afficherDebrief({
+            score:0, titre:"Appel écourté",
+            message: LANGUE.persona.prenom + " a mis fin à l'appel : l'échange n'était plus sérieux. L'exercice ne fonctionne que si tu joues le jeu — reprends quand tu veux.",
+            objectifs:[], corrections:[], vocabulaire:[], aisance:null, conseil:'',
+        });
+        return;
+    }
+    if(!transcript.length){
+        track('appel_termine', Object.assign({ resultat:'sans_conversation' }, stats));
+        setStatus("Il n'y a rien à analyser : personne n'a parlé.");
+        montrer('setup');
+        return;
+    }
+
+    ouvrirModal();
+    $('d-score').textContent = '';
+    $('d-titre').textContent = "Analyse de l'appel";
+    $('d-message').textContent = "On repasse la conversation…";
+    $('d-body').innerHTML = '<div class="spinner"></div>';
+
+    try {
+        const r = await fetch('/api/debrief', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ prompt: buildDebriefPrompt(transcript) })
+        });
+        if(!r.ok) throw new Error('debrief ' + r.status);
+        const d = await r.json();
+        track('appel_termine', Object.assign({ resultat:'analyse', score:d.score||0 }, stats));
+        afficherDebrief(d);
+    } catch(e){
+        console.error(e);
+        track('appel_termine', Object.assign({ resultat:'erreur_debrief' }, stats));
+        afficherDebrief({ score:null, titre:"Analyse indisponible",
+            message:"Le débrief n'a pas pu être généré. Ta conversation, elle, s'est bien passée — réessaie dans un instant.",
+            objectifs:[], corrections:[], vocabulaire:[], aisance:null, conseil:'' });
+    }
+};
+
+/* ---------------- rendu du débrief ---------------- */
+function ouvrirModal(){ $('modal').classList.add('on'); }
+window.fermerModal = () => { $('modal').classList.remove('on'); };
+window.rejouer = () => { fermerModal(); demarrer(); };
+window.retourSetup = () => { fermerModal(); montrer('setup'); };
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function afficherDebrief(d){
+    ouvrirModal();
+    $('d-score').textContent = (typeof d.score === 'number') ? d.score : '—';
+    $('d-titre').textContent = d.titre || 'Appel terminé';
+    $('d-message').textContent = d.message || '';
+
+    let html = '';
+
+    if(d.objectifs && d.objectifs.length){
+        html += `<div class="sec"><h4><i data-lucide="target" style="width:13px;height:13px"></i> Ta mission</h4>` +
+            d.objectifs.map(o => `<div class="goal">
+                <i data-lucide="${o.atteint?'check-circle-2':'circle'}" style="width:17px;height:17px;flex-shrink:0;margin-top:2px;color:${o.atteint?'#4ade80':'#6b7280'}"></i>
+                <span style="color:${o.atteint?'#e6e6f0':'#8b8ba3'}">${esc(o.libelle)}</span></div>`).join('') + `</div>`;
+    }
+    if(d.corrections && d.corrections.length){
+        html += `<div class="sec"><h4><i data-lucide="spell-check" style="width:13px;height:13px"></i> À corriger</h4>` +
+            d.corrections.map(c => `<div class="fix">
+                <div class="bad">${esc(c.dit)}</div>
+                <div class="good"><i data-lucide="corner-down-right" style="width:14px;height:14px"></i> ${esc(c.correct)}</div>
+                ${c.pourquoi?`<div class="why">${esc(c.pourquoi)}</div>`:''}</div>`).join('') + `</div>`;
+    }
+    if(d.vocabulaire && d.vocabulaire.length){
+        html += `<div class="sec"><h4><i data-lucide="book-open" style="width:13px;height:13px"></i> À retenir pour la prochaine fois</h4>
+            <div class="vocab">` + d.vocabulaire.map(v =>
+                `<div class="vchip"><b>${esc(v.mot)}</b><br><span>${esc(v.sens)}</span></div>`).join('') + `</div></div>`;
+    }
+    if(d.aisance){
+        const n = typeof d.aisance.note === 'number' ? d.aisance.note : 0;
+        html += `<div class="sec"><h4><i data-lucide="activity" style="width:13px;height:13px"></i> Aisance</h4>
+            <div class="meter"><i style="width:${Math.max(0,Math.min(100,n))}%"></i></div>
+            <p>${esc(d.aisance.commentaire)}</p></div>`;
+    }
+    if(d.conseil){
+        html += `<div class="sec" style="background:linear-gradient(100deg,rgba(139,92,246,.13),rgba(34,211,238,.09));border-color:rgba(139,92,246,.3)">
+            <h4><i data-lucide="lightbulb" style="width:13px;height:13px"></i> Une seule chose à travailler</h4><p>${esc(d.conseil)}</p></div>`;
+    }
+
+    html += `<div class="actions">
+        <button class="btn btn-p" onclick="rejouer()">Rappeler</button>
+        <button class="btn btn-s" onclick="retourSetup()">Changer de réglages</button>
+    </div>
+    <button class="linkbtn" onclick="fermerModal()">Fermer</button>`;
+
+    $('d-body').innerHTML = html;
+    try { lucide.createIcons(); } catch(e){}
+}
+
+/* ---------------- démarrage ---------------- */
+renderSelectors();
+if(isInApp()) $('inapp').classList.remove('hidden');
+montrer('setup');
+lucide.createIcons();
+
+// Aide au réglage : __prompt() dans la console affiche le prompt réellement envoyé.
+window.__prompt = () => buildInstruction();
+window.__debrief = () => buildDebriefPrompt(['APPRENANT : "Hello, I want a table"']);
+</script>
+</body>
+</html>
