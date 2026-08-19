@@ -668,7 +668,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function onLiveMessage(msg){
         try {
             const sc = msg.serverContent;
-            if(sc){
+            // Dès que l'outil « raccrocher » a été appelé (hungUpByMarc devient non-null),
+            // le modèle reste bloqué en attente de notre réponse puis, une fois débloqué,
+            // continue parfois à générer (il ne « sait » pas que l'entretien est terminé) et
+            // rejoue un ou deux adieux en plus. On ignore donc tout ce qui arrive après :
+            // le vrai adieu (avant l'appel d'outil) a déjà été joué et transcrit normalement.
+            if(sc && !hungUpByMarc){
                 if(sc.modelTurn && sc.modelTurn.parts){
                     for(const p of sc.modelTurn.parts){ if(p.inlineData && p.inlineData.data) playPCM(p.inlineData.data); }
                 }
