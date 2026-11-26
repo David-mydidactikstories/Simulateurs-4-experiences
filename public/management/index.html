@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Management — MyDidactik Stories</title>
+<meta name="description" content="Simulateur vocal : annoncer un refus d'augmentation à un collaborateur.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gabarito:wght@500;700;800;900&family=Figtree:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/demo.css">
+<!--ANALYTICS-->
+</head>
+<body>
+<div id="app"></div>
+<script>
+window.DEMO = {
+  key: "management", titleText: "Management",
+  accent: { accent: "#7c5cff", soft: "#e8e2ff", on: "#ffffff" },
+  tag: "Management · conversation difficile",
+  title: "Annoncer un refus <em>sans perdre ton équipe</em>",
+  lead: "Marc attend une réponse à sa demande d'augmentation. Elle est refusée. À toi de l'appeler.",
+  mission: {
+    titre: "Ta mission",
+    paras: ["Marc est dans ton équipe, tu es son manager. Tu l'appelles pour lui annoncer que son augmentation est refusée cette année."],
+    faits: [
+      "<b>Marc</b> : 34 ans, commercial senior, huit ans dans l'entreprise.",
+      "Année record : objectifs dépassés de 27 %, c'est lui qui a signé le contrat Meridian en mars.",
+      "Décision de la direction : pas d'augmentation cette année, le budget salarial est gelé.",
+      "À toi de voir ce que tu peux proposer et surtout tenir : revue à une date précise, prime, évolution, formation…"
+    ]
+  },
+  picker: { label: "Ton collaborateur", items: [
+    { id: "marc", nom: "Marc", sous: "34 ans · commercial senior", role: "Commercial senior · huit ans d'ancienneté", diff: "Impatient", ico: "M",
+      approche: "Marc passe par des paliers dans l'ordre : confiance, choc, frustration (ses chiffres, un collègue augmenté l'an dernier, un projet d'achat immobilier), négociation, puis résolution. Il teste si le manager assume la décision (« c'est toi qui as décidé, ou on te l'a imposée ? »), déteste qu'on rejette la faute sur la direction ou les RH, exige du concret (date, engagement) face au flou, et se détend si on est transparent, qu'on reconnaît sa performance et qu'on propose des perspectives datées." }
+  ] },
+  maxMin: 5,
+  liveHint: "Marc va décrocher. Sois humain et direct. Tu peux raccrocher avec le bouton rouge.",
+  motifs: { accord: "Marc repart motivé", fin: "Marc repart déçu mais digne", refus: "Marc reste bloqué", troll: "Appel coupé", timeout: "Temps écoulé", abandon: "Tu as raccroché" },
+  cleTitre: "La clé de cet entretien",
+  debrief: function (c) {
+    return "Tu es coach en management, exigeant et bienveillant. Tu débriefes un appel téléphonique simulé : l'apprenant, manager, annonce à Marc, son collaborateur, que son augmentation est refusée cette année (budget gelé par la direction).\n\n" +
+    "CE QU'IL FALLAIT COMPRENDRE DE MARC : " + c.item.approche + "\n" +
+    "FAITS CONNUS DU MANAGER : Marc, 34 ans, commercial senior, huit ans d'ancienneté, objectifs dépassés de 27 %, a signé le contrat Meridian en mars. Décision : pas d'augmentation cette année.\n" +
+    "Fin de l'appel (motif technique) : " + c.motif + "\n\n" +
+    "TRANSCRIPTION (APPRENANT = le manager) :\n" + c.transcript + "\n\n" +
+    "AVERTISSEMENT : transcription vocale automatique, parfois imparfaite. Ne juge que ce qui est clairement dit.\n\n" +
+    "Critères : a-t-il annoncé clairement la décision sans se cacher ? assumé (pas de « c'est la direction ») ? reconnu la performance concrète de Marc ? écouté et posé des questions ouvertes ? proposé des perspectives concrètes avec une échéance ? évité les promesses floues ? gardé Marc motivé ?\n\n" +
+    "Retourne UNIQUEMENT un objet JSON, sans texte autour :\n" +
+    '{"issue":"gagne"|"moyen"|"perdu","titre":"4 à 7 mots, sans complaisance ni humiliation","resume":"2 phrases sur la façon dont l\'appel s\'est joué, en tutoyant l\'apprenant, sans accord genré","forts":["ce qui a bien fonctionné, en citant le moment"],"faibles":["ce qui a fait monter la tension ou perdre Marc, avec le moment et le mécanisme"],"cle":"3 à 5 phrases : comment annoncer ce refus à CE collaborateur et POURQUOI cela marche (ou pas)","aRetenir":"une seule phrase : la chose à changer la prochaine fois"}\n\n' +
+    'RÈGLES : "gagne" seulement si Marc repart apaisé et motivé ou si l\'entretien est clairement bien mené malgré le refus. Sois précis, cite des moments, jamais moralisateur. Tutoie l\'apprenant sans accord genré. Si la transcription est trop courte, dis-le dans resume, mets perdu et renvoie des tableaux vides.';
+  }
+};
+</script>
+<script src="/assets/el-demo.js"></script>
+<script src="/assets/demo.js"></script>
+</body>
+</html>

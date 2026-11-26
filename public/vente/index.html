@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vente par téléphone — MyDidactik Stories</title>
+<meta name="description" content="Simulateur vocal : convaincre un client réaliste qui n'a rien demandé.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gabarito:wght@500;700;800;900&family=Figtree:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/demo.css">
+<!--ANALYTICS-->
+</head>
+<body>
+<div id="app"></div>
+<script>
+var FICHE_TXT = "PRODUIT : Esprit Tranquille, assurance décès accidentel distribuée par Prévoyance Meridian. Capital versé aux bénéficiaires si le décès résulte d'un accident, doublé si l'accident survient dans la circulation (voiture, moto, vélo, piéton). Sans questionnaire de santé, couverture immédiate.\n" +
+"FORMULES (prime mensuelle ; capital ; capital doublé circulation) : 6,90 € ; 50 000 ; 100 000 | 9,90 € ; 75 000 ; 150 000 | 12,90 € ; 100 000 ; 200 000 | 17,90 € ; 150 000 ; 300 000 | 22,90 € ; 200 000 ; 400 000 | 29,90 € ; 300 000 ; 600 000. Tarif unique, identique quel que soit l'âge.\n" +
+"GARANTIES : décès accidentel 24 h/24 dans le monde entier ; doublement circulation ; aucun questionnaire de santé ni examen médical ; couverture immédiate sans délai de carence ; avance obsèques de 5 000 € sous 72 h ; capital versé 10 jours ouvrés après dossier complet ; bénéficiaires libres et modifiables sans frais ; accompagnement des proches.\n" +
+"EXCLUSIONS ET LIMITES : décès par maladie (AVC, infarctus, cancer) : RIEN n'est versé, le contrat ne couvre que l'accident ; le décès doit survenir dans les 12 mois suivant l'accident ; alcool et stupéfiants au volant au-delà du taux légal belge : aucune indemnisation ; suicide et actes intentionnels ; sports à risque (sports mécaniques en compétition, parachutisme, alpinisme, plongée au-delà de 40 m) ; guerre, émeute, terrorisme ; faute intentionnelle grave (conduite sans permis, délit de fuite) ; avion et bus couverts au capital simple, sans doublement.\n" +
+"CONDITIONS : âge de souscription 18 à 69 ans ; couverture jusqu'à 75 ans ; prise d'effet immédiate à la signature ; rétractation 14 jours sans frais ; résiliation à tout moment par lettre recommandée, effet à l'échéance mensuelle suivante ; aucune valeur de rachat (pure protection).";
+
+window.DEMO = {
+  key: "vente", titleText: "Vente par téléphone",
+  accent: { accent: "#19c2ae", soft: "#d5f6f0", on: "#06302b" },
+  tag: "Vente par téléphone",
+  title: "Convaincre quelqu'un <em>qui n'a rien demandé</em>",
+  lead: "Tu appelles à froid pour proposer une assurance décès accidentel. En face, un client réaliste, avec ses réflexes et ses objections.",
+  mission: {
+    titre: "Ta mission",
+    paras: ["Tu travailles chez <b>Prévoyance Meridian</b> et tu présentes <b>Esprit Tranquille</b>. Le client ne t'attendait pas et ne te doit rien."],
+    faits: [
+      "Objectif : décrocher une adhésion, ou à défaut l'envoi des documents et un rappel.",
+      "Pose des vraies questions avant de défendre ton produit.",
+      "Reste exact sur les chiffres et les exclusions : une erreur, le client la sent tout de suite."
+    ]
+  },
+  fiche: { titre: "Ta fiche produit (tu peux la garder sous les yeux)", html:
+    '<h4>Le produit</h4><p>Un capital est versé aux bénéficiaires si le décès résulte d\'un <b>accident</b>, doublé si l\'accident a lieu dans la circulation. Sans questionnaire de santé, couverture immédiate.</p>' +
+    '<h4>Formules</h4><table><tr><th>Par mois</th><th>Capital</th><th>Circulation</th></tr><tr><td>6,90 €</td><td>50 000 €</td><td>100 000 €</td></tr><tr><td>9,90 €</td><td>75 000 €</td><td>150 000 €</td></tr><tr><td>12,90 €</td><td>100 000 €</td><td>200 000 €</td></tr><tr><td>17,90 €</td><td>150 000 €</td><td>300 000 €</td></tr><tr><td>22,90 €</td><td>200 000 €</td><td>400 000 €</td></tr><tr><td>29,90 €</td><td>300 000 €</td><td>600 000 €</td></tr></table><p>Tarif unique, quel que soit l\'âge.</p>' +
+    '<h4>Garanties</h4><ul><li>Décès accidentel 24 h/24, partout dans le monde</li><li>Aucun questionnaire de santé, aucun examen, aucun délai de carence</li><li>Avance obsèques de 5 000 € sous 72 h</li><li>Capital versé 10 jours ouvrés après dossier complet</li><li>Bénéficiaires libres et modifiables sans frais</li><li>Accompagnement des proches</li></ul>' +
+    '<h4>Exclusions et limites</h4><ul><li><b>Décès par maladie</b> (AVC, infarctus, cancer) : rien n\'est versé</li><li>Décès dans les 12 mois suivant l\'accident</li><li>Alcool ou stupéfiants au volant au-delà du taux légal belge</li><li>Suicide, actes intentionnels, sports à risque, guerre, émeute, terrorisme</li><li>Conduite sans permis, délit de fuite</li><li>Avion et bus : capital simple, sans doublement</li></ul>' +
+    '<h4>Conditions</h4><ul><li>Souscription de 18 à 69 ans, couverture jusqu\'à 75 ans</li><li>Rétractation 14 jours sans frais</li><li>Résiliation à tout moment (lettre recommandée, effet à l\'échéance mensuelle suivante)</li><li>Aucune valeur de rachat</li></ul>' },
+  picker: { label: "Choisis ton client", items: [
+    { id: "julien", nom: "Julien Masse", sous: "28 ans · développeur à Liège", role: "28 ans · développeur à Liège", diff: "Décontracté", ico: "J",
+      objection: "« À mon âge, une assurance décès, c'est pour les vieux ou les pères de famille. »",
+      approche: "Il n'a personne à charge en apparence, mais sa mère s'est portée caution pour son crédit auto de 18 000 € (il n'y pense jamais). Ce levier ne s'ouvre qu'avec une VRAIE QUESTION sur ses proches ou ses crédits. Autres leviers : prix réel (6,90 €/mois), à son âge c'est l'accident (route : 30 000 km/an) qui tue, pas la maladie, pas de questionnaire de santé. Il recule devant l'argumentaire récité, le pathos et la condescendance. Il pose la question « et un cancer, c'est couvert ? » : la bonne réponse est NON, franchement.",
+      objectif: "adhésion (réaliste si le vendeur découvre le crédit et la caution et parle de la route)" },
+    { id: "sarah", nom: "Sarah Bastin", sous: "38 ans · commerçante à Verviers", role: "38 ans · commerçante à Verviers", diff: "Méfiante", ico: "S",
+      objection: "« Les assurances, c'est tous des arnaqueurs. »",
+      approche: "Il y a quatre ans, son assurance hospitalisation a refusé de rembourser (sa fille) à cause d'une clause jamais expliquée. Sa vraie peur : signer sans comprendre. Elle pose la question piège « qu'est-ce qui n'est PAS couvert ? ». Le point décisif : annoncer SPONTANÉMENT, avant sa question, que le contrat ne couvre QUE l'accident et ne verse rien en cas de maladie ; puis les 12 mois, l'alcool, la rétractation de 14 jours, l'absence de valeur de rachat. Elle se ferme si on minimise, se justifie, fait du pathos, de l'humour, ou presse. Elle ne signe JAMAIS au téléphone.",
+      objectif: "obtenir l'envoi des documents et un rappel à l'heure qu'elle fixe (une adhésion immédiate est quasi impossible)" }
+  ] },
+  maxMin: 4,
+  liveHint: "Présente-toi, puis écoute. Tu peux raccrocher quand tu veux avec le bouton rouge.",
+  motifs: { accord: "Il / elle souscrit", rappel: "Documents + rappel", refus: "Refus définitif", troll: "Appel coupé", timeout: "Temps écoulé", abandon: "Tu as raccroché", fin: "Fin de l'appel" },
+  cleTitre: "La clé de ce client",
+  debrief: function (c) {
+    var it = c.item;
+    return "Tu es formateur en vente d'assurances, exigeant et concret. Tu débriefes un appel de prospection téléphonique simulé.\n\n" +
+    "LE PRODUIT VENDU (source de vérité — toute affirmation du vendeur qui la contredit est une erreur) :\n" + FICHE_TXT + "\n\n" +
+    "LE CLIENT APPELÉ : " + it.nom + ", " + it.sous + "\nSon objection tenue : " + it.objection + "\nCe qu'il fallait comprendre de lui : " + it.approche + "\nObjectif réaliste : " + it.objectif + "\nFin de l'appel (motif technique) : " + c.motif + "\n\n" +
+    "TRANSCRIPTION (les lignes APPRENANT sont ce que l'apprenant a dit) :\n" + c.transcript + "\n\n" +
+    "AVERTISSEMENT : transcription vocale automatique, donc imparfaite. Ne relève jamais une erreur qui pourrait n'être qu'un mot mal retranscrit. Ne juge que ce qui est clairement affirmé. Un mot absurde dans le contexte d'une assurance décès est une erreur de reconnaissance vocale : ne le recopie jamais.\n\n" +
+    "Retourne UNIQUEMENT un objet JSON, sans texte autour :\n" +
+    '{"issue":"gagne"|"moyen"|"perdu","titre":"4 à 7 mots, sans complaisance ni humiliation","resume":"2 phrases qui disent comment l\'appel s\'est joué, en tutoyant l\'apprenant, sans accord genré","forts":["ce qui a concrètement fonctionné sur CE client, en citant le moment"],"faibles":["ce qui l\'a braqué ou fait reculer, avec le moment et le mécanisme"],"corrections":[{"dit":"ce que le vendeur a affirmé, au plus près","mieux":"ce que dit réellement la fiche","pourquoi":"Fiche produit"}],"cle":"3 à 5 phrases : comment il fallait aborder CE client précis et POURQUOI","aRetenir":"une seule phrase : la chose à changer au prochain appel"}\n\n' +
+    "RÈGLES : \"issue\" = gagne seulement si l'objectif réaliste de CE client est atteint (relis-le). \"corrections\" = uniquement des contradictions nettes avec la fiche, tableau vide sinon (et dis-le dans resume). Sois précis et utile, jamais moralisateur. Tutoie l'apprenant sans accord genré. Si la transcription est trop courte pour juger, dis-le dans resume, mets perdu et renvoie des tableaux vides.";
+  }
+};
+</script>
+<script src="/assets/el-demo.js"></script>
+<script src="/assets/demo.js"></script>
+</body>
+</html>

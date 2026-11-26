@@ -218,6 +218,52 @@ Retourne UNIQUEMENT un objet JSON, sans texte autour :
   sendJSON(res, 500, { error: 'ia_indisponible' });
 }
 
+
+// 5) Sessions vocales ElevenLabs pour les démos « vente », « management », « langues ».
+//    Le navigateur demande une URL signée (valable quelques minutes) ; la clé ElevenLabs
+//    reste côté serveur (variable ELEVENLABS_API_KEY). Chaque variante pointe vers un agent.
+const DEMO_AGENTS = {
+  vente: {
+    julien: process.env.EL_DEMO_VENTE_JULIEN || 'agent_9501m8bsrbnkehfa3m06hc0dt42v',
+    sarah: process.env.EL_DEMO_VENTE_SARAH || 'agent_1701m8bsrcpaey2r7ppyke1j5dcf',
+  },
+  management: {
+    marc: process.env.EL_DEMO_MANAGEMENT_MARC || 'agent_6901m8bsreczecb8cx7r2q5wpvbx',
+  },
+  langues: {
+    en: process.env.EL_DEMO_LANGUES_EN || 'agent_7301m8bsrgh0fmz9rn1w1y7wsvwv',
+    nl: process.env.EL_DEMO_LANGUES_NL || 'agent_7701m8bsrhegfzwbgvywt78pt3bs',
+    es: process.env.EL_DEMO_LANGUES_ES || 'agent_2101m8bsrjcne4eayy5yv01sqr65',
+    de: process.env.EL_DEMO_LANGUES_DE || 'agent_1201m8bsrk7vez2afvdvmgr24eph',
+  },
+};
+
+async function handleDemoSession(req, res) {
+  const u = new URL(req.url, 'http://x');
+  const demo = u.searchParams.get('demo') || '';
+  const variante = u.searchParams.get('variante') || '';
+  const agentId = DEMO_AGENTS[demo] && DEMO_AGENTS[demo][variante];
+  if (!agentId) return sendJSON(res, 400, { error: 'Démo ou variante inconnue.' });
+  const cle = (process.env.ELEVENLABS_API_KEY || '').trim();
+  if (!cle) return sendJSON(res, 503, { error: 'Clé ElevenLabs manquante côté serveur (variable ELEVENLABS_API_KEY).' });
+  try {
+    const r = await fetch(
+      'https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=' + encodeURIComponent(agentId),
+      { headers: { 'xi-api-key': cle } }
+    );
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      console.error('[demo] signed url', demo, variante, r.status, t.slice(0, 200));
+      return sendJSON(res, 502, { error: 'ElevenLabs a refusé la connexion (' + r.status + ').' });
+    }
+    const data = await r.json();
+    sendJSON(res, 200, { signedUrl: data.signed_url });
+  } catch (e) {
+    console.error('[demo] signed url', e);
+    sendJSON(res, 502, { error: 'Impossible de joindre ElevenLabs.' });
+  }
+}
+
 // 4) Analytics (Umami) — injecté seulement si la variable d'environnement existe.
 const UMAMI_ID = (process.env.UMAMI_WEBSITE_ID || '').trim();
 const UMAMI_SRC = (process.env.UMAMI_SCRIPT_URL || 'https://cloud.umami.is/script.js').trim();
@@ -271,6 +317,7 @@ const server = http.createServer((req, res) => {
     req.url = req.url.slice(PHISHING_PREFIX.length) || '/';
     return phishing.handle(req, res);
   }
+  if (req.method === 'GET' && (req.url || '').startsWith('/api/demo-session')) return handleDemoSession(req, res);
   if (req.method === 'POST' && req.url === '/api/token') return handleToken(req, res);
   if (req.method === 'POST' && req.url === '/api/debrief') return handleDebrief(req, res);
   if (req.method === 'POST' && req.url === '/api/verifier') return handleVerifier(req, res);
@@ -285,4 +332,4 @@ server.on('upgrade', (request, socket, head) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('✅ Serveur prêt sur le port ' + PORT + ' — /marc/ /langues/ /histoire/ /assurance/ /phishing/'));
+server.listen(PORT, () => console.log('✅ Serveur prêt sur le port ' + PORT + ' — / /vente/ /management/ /langues/ /phishing/'));
