@@ -43,17 +43,17 @@
   }
 
   function setupHtml() {
-    var h = "<h2>" + esc(D.setupTitre || "Prépare ton appel") + "</h2>";
+    var h = "<h2>" + esc(D.setupTitre || "Préparez votre appel") + "</h2>";
     if (locked()) {
-      return h + '<div class="hint">Tu as utilisé tes ' + maxCalls + " essai" + (maxCalls > 1 ? "s" : "") + " pour cette démo. Pour en refaire, écris-moi : <a href=\"" + link("/") + '#contact">demander une démo</a>.</div>';
+      return h + '<div class="hint">Vous avez utilisé vos ' + maxCalls + " essai" + (maxCalls > 1 ? "s" : "") + " pour cette démo. Pour en refaire, écrivez-moi : <a href=\"" + link("/") + '#contact">me contacter</a>.</div>';
     }
     h += choicesHtml(D.picker.label, "pick", D.picker.items, D.picker.row);
     (D.extras || []).forEach(function (x) { h += choicesHtml(x.label, x.id, x.items, x.row !== false); });
-    h += '<label class="field"><span class="label">Ton prénom (facultatif)</span><input id="prenom" maxlength="30" autocomplete="given-name" value="' + esc(state.prenom) + '" placeholder="Pour que ton interlocuteur t\'appelle par ton prénom"></label>';
+    h += '<label class="field"><span class="label">Votre prénom (facultatif)</span><input id="prenom" maxlength="30" autocomplete="given-name" value="' + esc(state.prenom) + '" placeholder="Pour que votre interlocuteur vous appelle par votre prénom"></label>';
     h += '<div id="err" class="err" hidden></div>';
     h += '<button class="cta" id="go" type="button">' + esc(D.cta || "Passer l'appel") + "</button>";
-    h += '<p class="note">Il te faut un micro et des écouteurs de préférence. L\'appel dure ' + (maxMin >= 1 ? Math.round(maxMin) + " minutes maximum" : "peu de temps") +
-      ". Tout est fictif : n'utilise pas de vraies données personnelles.</p>";
+    h += '<p class="note">Il vous faut un micro, et des écouteurs de préférence. L\'appel dure ' + (maxMin >= 1 ? Math.round(maxMin) + " minutes maximum" : "peu de temps") +
+      ". Tout est fictif : n'utilisez pas de vraies données personnelles.</p>";
     if (maxCalls) h += '<p class="note">Essais restants : ' + Math.max(0, maxCalls - callsUsed()) + " sur " + maxCalls + ".</p>";
     return h;
   }
@@ -123,7 +123,7 @@
     transcript = []; bumpCalls();
     setPhase("connecting", "Appel en cours…");
     var go = document.getElementById("go"); if (go) go.disabled = true;
-    document.getElementById("panel").innerHTML = '<h2>Appel en cours</h2><div class="hint">' + (D.liveHint || "Parle naturellement, comme au téléphone.") + "</div>" +
+    document.getElementById("panel").innerHTML = '<h2>Appel en cours</h2><div class="hint">' + (D.liveHint || "Parlez naturellement, comme au téléphone.") + "</div>" +
       '<button class="cta ghost" id="hang2" type="button">Raccrocher</button>';
     document.getElementById("hang2").addEventListener("click", function () { endCall("abandon"); });
     if (window.innerWidth < 1100) el.stage.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -152,17 +152,17 @@
     var userLines = transcript.filter(function (l) { return l.role === "user"; }).length;
     var p = document.getElementById("panel");
     if (userLines < 2) {
-      p.innerHTML = '<h2>Appel trop court</h2><div class="hint">Je n\'ai pas assez de paroles pour faire un vrai débrief. Relance un appel et laisse la conversation s\'installer.</div><button class="cta" id="again" type="button">Refaire un appel</button>';
+      p.innerHTML = '<h2>Appel trop court</h2><div class="hint">Je n\'ai pas assez de paroles pour faire un vrai débrief. Relancez un appel et laissez la conversation s\'installer.</div><button class="cta" id="again" type="button">Refaire un appel</button>';
       document.getElementById("again").addEventListener("click", function () { setPhase("idle", "Prêt à appeler"); renderSetup(); });
       return;
     }
-    p.innerHTML = '<div class="debrief"><h2>Ton débrief</h2><div class="loading"><span class="spin"></span>Ton formateur relit la conversation…</div></div>';
+    p.innerHTML = '<div class="debrief"><h2>Votre débrief</h2><div class="loading"><span class="spin"></span>Votre formateur relit la conversation…</div></div>';
     var text = transcript.map(function (l) { return (l.role === "user" ? "APPRENANT" : "INTERLOCUTEUR") + " : " + l.text; }).join("\n");
     var prompt = D.debrief({ state: state, item: item(state.pick), motif: motif, transcript: text, fromAgent: !!fromAgent });
     fetch("/api/debrief", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: prompt }) })
       .then(function (r) { if (!r.ok) throw new Error("debrief " + r.status); return r.json(); })
       .then(function (j) { renderDebrief(j, motif, text); })
-      .catch(function () { p.innerHTML = '<h2>Débrief indisponible</h2><div class="hint">L\'analyse n\'a pas pu se faire cette fois. Ton appel a bien eu lieu : tu peux en refaire un.</div><button class="cta" id="again" type="button">Refaire un appel</button>'; document.getElementById("again").addEventListener("click", function () { setPhase("idle", "Prêt à appeler"); renderSetup(); }); });
+      .catch(function () { p.innerHTML = '<h2>Débrief indisponible</h2><div class="hint">L\'analyse n\'a pas pu se faire cette fois. Votre appel a bien eu lieu : vous pouvez en refaire un.</div><button class="cta" id="again" type="button">Refaire un appel</button>'; document.getElementById("again").addEventListener("click", function () { setPhase("idle", "Prêt à appeler"); renderSetup(); }); });
   }
 
   function list(arr) { return arr && arr.length ? "<ul>" + arr.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : ""; }

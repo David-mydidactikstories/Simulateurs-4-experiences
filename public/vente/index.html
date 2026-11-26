@@ -25,23 +25,23 @@ window.DEMO = {
   accent: { accent: "#19c2ae", soft: "#d5f6f0", on: "#06302b" },
   tag: "Vente par téléphone",
   title: "Convaincre quelqu'un <em>qui n'a rien demandé</em>",
-  lead: "Tu appelles à froid pour proposer une assurance décès accidentel. En face, un client réaliste, avec ses réflexes et ses objections.",
+  lead: "Vous appelez à froid pour proposer une assurance décès accidentel. En face, un client réaliste, avec ses réflexes et ses objections.",
   mission: {
-    titre: "Ta mission",
-    paras: ["Tu travailles chez <b>Prévoyance Meridian</b> et tu présentes <b>Esprit Tranquille</b>. Le client ne t'attendait pas et ne te doit rien."],
+    titre: "Votre mission",
+    paras: ["Vous travaillez chez <b>Prévoyance Meridian</b> et vous présentez <b>Esprit Tranquille</b>. Le client ne vous attendait pas et ne vous doit rien."],
     faits: [
       "Objectif : décrocher une adhésion, ou à défaut l'envoi des documents et un rappel.",
-      "Pose des vraies questions avant de défendre ton produit.",
-      "Reste exact sur les chiffres et les exclusions : une erreur, le client la sent tout de suite."
+      "Posez de vraies questions avant de défendre votre produit.",
+      "Restez exact sur les chiffres et les exclusions : une erreur, le client la sent tout de suite."
     ]
   },
-  fiche: { titre: "Ta fiche produit (tu peux la garder sous les yeux)", html:
+  fiche: { titre: "Votre fiche produit (gardez-la sous les yeux)", html:
     '<h4>Le produit</h4><p>Un capital est versé aux bénéficiaires si le décès résulte d\'un <b>accident</b>, doublé si l\'accident a lieu dans la circulation. Sans questionnaire de santé, couverture immédiate.</p>' +
     '<h4>Formules</h4><table><tr><th>Par mois</th><th>Capital</th><th>Circulation</th></tr><tr><td>6,90 €</td><td>50 000 €</td><td>100 000 €</td></tr><tr><td>9,90 €</td><td>75 000 €</td><td>150 000 €</td></tr><tr><td>12,90 €</td><td>100 000 €</td><td>200 000 €</td></tr><tr><td>17,90 €</td><td>150 000 €</td><td>300 000 €</td></tr><tr><td>22,90 €</td><td>200 000 €</td><td>400 000 €</td></tr><tr><td>29,90 €</td><td>300 000 €</td><td>600 000 €</td></tr></table><p>Tarif unique, quel que soit l\'âge.</p>' +
     '<h4>Garanties</h4><ul><li>Décès accidentel 24 h/24, partout dans le monde</li><li>Aucun questionnaire de santé, aucun examen, aucun délai de carence</li><li>Avance obsèques de 5 000 € sous 72 h</li><li>Capital versé 10 jours ouvrés après dossier complet</li><li>Bénéficiaires libres et modifiables sans frais</li><li>Accompagnement des proches</li></ul>' +
     '<h4>Exclusions et limites</h4><ul><li><b>Décès par maladie</b> (AVC, infarctus, cancer) : rien n\'est versé</li><li>Décès dans les 12 mois suivant l\'accident</li><li>Alcool ou stupéfiants au volant au-delà du taux légal belge</li><li>Suicide, actes intentionnels, sports à risque, guerre, émeute, terrorisme</li><li>Conduite sans permis, délit de fuite</li><li>Avion et bus : capital simple, sans doublement</li></ul>' +
     '<h4>Conditions</h4><ul><li>Souscription de 18 à 69 ans, couverture jusqu\'à 75 ans</li><li>Rétractation 14 jours sans frais</li><li>Résiliation à tout moment (lettre recommandée, effet à l\'échéance mensuelle suivante)</li><li>Aucune valeur de rachat</li></ul>' },
-  picker: { label: "Choisis ton client", items: [
+  picker: { label: "Choisissez votre client", items: [
     { id: "julien", nom: "Julien Masse", sous: "28 ans · développeur à Liège", role: "28 ans · développeur à Liège", diff: "Décontracté", ico: "J",
       objection: "« À mon âge, une assurance décès, c'est pour les vieux ou les pères de famille. »",
       approche: "Il n'a personne à charge en apparence, mais sa mère s'est portée caution pour son crédit auto de 18 000 € (il n'y pense jamais). Ce levier ne s'ouvre qu'avec une VRAIE QUESTION sur ses proches ou ses crédits. Autres leviers : prix réel (6,90 €/mois), à son âge c'est l'accident (route : 30 000 km/an) qui tue, pas la maladie, pas de questionnaire de santé. Il recule devant l'argumentaire récité, le pathos et la condescendance. Il pose la question « et un cancer, c'est couvert ? » : la bonne réponse est NON, franchement.",
@@ -52,8 +52,8 @@ window.DEMO = {
       objectif: "obtenir l'envoi des documents et un rappel à l'heure qu'elle fixe (une adhésion immédiate est quasi impossible)" }
   ] },
   maxMin: 4,
-  liveHint: "Présente-toi, puis écoute. Tu peux raccrocher quand tu veux avec le bouton rouge.",
-  motifs: { accord: "Il / elle souscrit", rappel: "Documents + rappel", refus: "Refus définitif", troll: "Appel coupé", timeout: "Temps écoulé", abandon: "Tu as raccroché", fin: "Fin de l'appel" },
+  liveHint: "Présentez-vous, puis écoutez. Vous pouvez raccrocher à tout moment avec le bouton rouge.",
+  motifs: { accord: "Il / elle souscrit", rappel: "Documents + rappel", refus: "Refus définitif", troll: "Appel coupé", timeout: "Temps écoulé", abandon: "Vous avez raccroché", fin: "Fin de l'appel" },
   cleTitre: "La clé de ce client",
   debrief: function (c) {
     var it = c.item;
@@ -63,8 +63,8 @@ window.DEMO = {
     "TRANSCRIPTION (les lignes APPRENANT sont ce que l'apprenant a dit) :\n" + c.transcript + "\n\n" +
     "AVERTISSEMENT : transcription vocale automatique, donc imparfaite. Ne relève jamais une erreur qui pourrait n'être qu'un mot mal retranscrit. Ne juge que ce qui est clairement affirmé. Un mot absurde dans le contexte d'une assurance décès est une erreur de reconnaissance vocale : ne le recopie jamais.\n\n" +
     "Retourne UNIQUEMENT un objet JSON, sans texte autour :\n" +
-    '{"issue":"gagne"|"moyen"|"perdu","titre":"4 à 7 mots, sans complaisance ni humiliation","resume":"2 phrases qui disent comment l\'appel s\'est joué, en tutoyant l\'apprenant, sans accord genré","forts":["ce qui a concrètement fonctionné sur CE client, en citant le moment"],"faibles":["ce qui l\'a braqué ou fait reculer, avec le moment et le mécanisme"],"corrections":[{"dit":"ce que le vendeur a affirmé, au plus près","mieux":"ce que dit réellement la fiche","pourquoi":"Fiche produit"}],"cle":"3 à 5 phrases : comment il fallait aborder CE client précis et POURQUOI","aRetenir":"une seule phrase : la chose à changer au prochain appel"}\n\n' +
-    "RÈGLES : \"issue\" = gagne seulement si l'objectif réaliste de CE client est atteint (relis-le). \"corrections\" = uniquement des contradictions nettes avec la fiche, tableau vide sinon (et dis-le dans resume). Sois précis et utile, jamais moralisateur. Tutoie l'apprenant sans accord genré. Si la transcription est trop courte pour juger, dis-le dans resume, mets perdu et renvoie des tableaux vides.";
+    '{"issue":"gagne"|"moyen"|"perdu","titre":"4 à 7 mots, sans complaisance ni humiliation","resume":"2 phrases qui disent comment l\'appel s\'est joué, en vouvoyant l\'apprenant, sans accord genré","forts":["ce qui a concrètement fonctionné sur CE client, en citant le moment"],"faibles":["ce qui l\'a braqué ou fait reculer, avec le moment et le mécanisme"],"corrections":[{"dit":"ce que le vendeur a affirmé, au plus près","mieux":"ce que dit réellement la fiche","pourquoi":"Fiche produit"}],"cle":"3 à 5 phrases : comment il fallait aborder CE client précis et POURQUOI","aRetenir":"une seule phrase : la chose à changer au prochain appel"}\n\n' +
+    "RÈGLES : \"issue\" = gagne seulement si l'objectif réaliste de CE client est atteint (relis-le). \"corrections\" = uniquement des contradictions nettes avec la fiche, tableau vide sinon (et dis-le dans resume). Sois précis et utile, jamais moralisateur. Vouvoie l'apprenant sans accord genré. Si la transcription est trop courte pour juger, dis-le dans resume, mets perdu et renvoie des tableaux vides.";
   }
 };
 </script>

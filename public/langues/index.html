@@ -30,32 +30,32 @@ window.DEMO = {
   accent: { accent: "#ff6b4a", soft: "#ffe3dc", on: "#3b1006" },
   tag: "Langues · jeu de rôle",
   title: "Réserver une table <em>dans la langue du restaurant</em>",
-  lead: "Tu appelles un restaurant. Ton interlocuteur ne parle que sa langue, mais il est patient. Pas de traduction, pas de filet : comme en vrai.",
+  lead: "Vous appelez un restaurant. Votre interlocuteur ne parle que sa langue, mais il est patient. Pas de traduction, pas de filet : comme en vrai.",
   mission: {
-    titre: "Ta mission",
-    paras: ["Tu veux réserver une table pour ce week-end. Choisis la langue et ton niveau : l'interlocuteur s'adapte."],
+    titre: "Votre mission",
+    paras: ["Vous voulez réserver une table pour ce week-end. Choisissez la langue et votre niveau : l'interlocuteur s'adapte."],
     faits: [
-      "Donne la date, l'heure et le nombre de personnes.",
-      "Indique un nom, une préférence (terrasse ou intérieur) et d'éventuelles allergies.",
-      "Si l'heure demandée est complète, négocie un autre créneau.",
-      "Tu bloques sur un mot ? Reformule ou demande de répéter : c'est ce qu'on fait au téléphone."
+      "Donnez la date, l'heure et le nombre de personnes.",
+      "Indiquez un nom, une préférence (terrasse ou intérieur) et d'éventuelles allergies.",
+      "Si l'heure demandée est complète, négociez un autre créneau.",
+      "Vous bloquez sur un mot ? Reformulez ou demandez de répéter : c'est ce qu'on fait au téléphone."
     ]
   },
-  picker: { label: "Choisis la langue", row: true, items: [
+  picker: { label: "Choisissez la langue", row: true, items: [
     { id: "en", nom: "English", sous: "Londres", role: "The Copper Fig · Londres", ico: "EN" },
     { id: "nl", nom: "Nederlands", sous: "Gand", role: "De Zwarte Zwaan · Gand", ico: "NL" },
     { id: "es", nom: "Español", sous: "Mexico", role: "La Higuera · Mexico", ico: "ES" },
     { id: "de", nom: "Deutsch", sous: "Munich", role: "Zum Goldenen Hirsch · Munich", ico: "DE" }
   ] },
-  extras: [ { id: "niveau", label: "Ton niveau", row: true, items: [
+  extras: [ { id: "niveau", label: "Votre niveau", row: true, items: [
     { id: "debutant", nom: "Débutant", sous: "A1 – A2", ico: "1" },
     { id: "inter", nom: "Intermédiaire", sous: "B1 – B2", ico: "2" },
     { id: "avance", nom: "Avancé", sous: "C1 et plus", ico: "3" }
   ] } ],
   vars: function (state) { return { niveau_consigne: NIVEAUX[state.extra.niveau].txt }; },
   maxMin: 4,
-  liveHint: "Parle uniquement dans la langue choisie. Tu peux raccrocher avec le bouton rouge.",
-  motifs: { accord: "Table réservée", refus: "Pas de réservation", fin: "Fin de l'appel", troll: "Appel coupé", timeout: "Temps écoulé", abandon: "Tu as raccroché" },
+  liveHint: "Parlez uniquement dans la langue choisie. Vous pouvez raccrocher avec le bouton rouge.",
+  motifs: { accord: "Table réservée", refus: "Pas de réservation", fin: "Fin de l'appel", troll: "Appel coupé", timeout: "Temps écoulé", abandon: "Vous avez raccroché" },
   issues: { gagne: "Réservation obtenue", moyen: "Presque", perdu: "À retravailler" },
   cleTitre: "Formules à réutiliser",
   debrief: function (c) {
@@ -65,7 +65,7 @@ window.DEMO = {
     "Fin de l'appel (motif technique) : " + c.motif + "\n\n" +
     "AVERTISSEMENT : transcription vocale automatique, donc imparfaite. Ne corrige jamais ce qui pourrait n'être qu'un mot mal reconnu ; ne corrige que ce qui est clairement faux ou maladroit. Ne juge pas l'accent.\n\n" +
     "Rédige tout le débrief EN FRANÇAIS (les citations restent dans la langue cible). Retourne UNIQUEMENT un objet JSON, sans texte autour :\n" +
-    '{"issue":"gagne"|"moyen"|"perdu","titre":"4 à 7 mots encourageants","resume":"2 phrases : la réservation a-t-elle abouti et comment l\'élève s\'est débrouillé, en tutoyant, sans accord genré","forts":["ce qui était bien (vocabulaire, politesse, réactivité), avec un exemple cité"],"faibles":["ce qui a coincé (blocage, hésitation, malentendu), avec le moment"],"corrections":[{"dit":"phrase ou mot de l\'élève, tel que transcrit","mieux":"la formulation correcte et naturelle dans la langue cible","pourquoi":"explication courte en français"}],"cle":"2 ou 3 formules utiles à réutiliser au téléphone, dans la langue cible, avec leur traduction française entre parenthèses","aRetenir":"une seule phrase : la priorité pour progresser"}\n\n' +
+    '{"issue":"gagne"|"moyen"|"perdu","titre":"4 à 7 mots encourageants","resume":"2 phrases : la réservation a-t-elle abouti et comment l\'élève s\'est débrouillé, en vouvoyant, sans accord genré","forts":["ce qui était bien (vocabulaire, politesse, réactivité), avec un exemple cité"],"faibles":["ce qui a coincé (blocage, hésitation, malentendu), avec le moment"],"corrections":[{"dit":"phrase ou mot de l\'élève, tel que transcrit","mieux":"la formulation correcte et naturelle dans la langue cible","pourquoi":"explication courte en français"}],"cle":"2 ou 3 formules utiles à réutiliser au téléphone, dans la langue cible, avec leur traduction française entre parenthèses","aRetenir":"une seule phrase : la priorité pour progresser"}\n\n' +
     'RÈGLES : "gagne" si la table est réservée (date, heure, nombre de personnes, nom obtenus) ; "moyen" si l\'essentiel est passé avec de l\'aide ; "perdu" sinon. Maximum 5 corrections, les plus utiles. Adapte l\'exigence au niveau annoncé. Si la transcription est trop courte, dis-le dans resume, mets perdu et renvoie des tableaux vides.';
   }
 };
