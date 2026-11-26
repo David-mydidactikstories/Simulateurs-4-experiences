@@ -100,6 +100,11 @@
   .call[aria-checked="true"] .ico svg { fill: #fff; }
   .call b { display: block; font-size: 1rem; }
   .call small { color: var(--muted); }
+  .call.out { cursor: not-allowed; opacity: .45; filter: grayscale(1); box-shadow: none; }
+  .call.out:hover { transform: none; box-shadow: none; }
+  .more { margin: 12px 0 0; font-size: .95rem; font-weight: 600; color: var(--ink); }
+  .more a { color: var(--blue); text-decoration: underline; }
+  .phone .more { font-size: .85rem; margin: 10px 0 0; max-width: 24ch; }
   .call .state { margin-left: auto; font-size: 0.75rem; font-weight: 700; color: var(--ok); background: #e3f7ec; padding: 3px 10px; border-radius: 999px; }
 
   /* Scène du téléphone */
@@ -355,6 +360,7 @@
     <p>Quelqu'un t'appelle en numéro masqué et te demande une information. Pose les bonnes questions, puis tranche.</p>
     <p class="label" id="calls-label">Choisir l'appel</p>
     <div class="calls" role="radiogroup" aria-labelledby="calls-label" id="calls"></div>
+    <p class="more" id="more-all" hidden>Envie de plus d'essais pour cette démo ? <a href="https://mydidactikstories.com/#contact" target="_blank" rel="noopener">Clique ici</a></p>
   </section>
 
   <section class="stage" id="stage" aria-label="Téléphone">
@@ -376,6 +382,7 @@
             <label id="manager-wrap" hidden>Prénom de ton manager<input id="manager" type="text" maxlength="30" autocomplete="off" placeholder="Prénom de ton manager"></label>
           </div>
           <button class="start" id="start"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span id="start-txt">Start</span></button>
+          <p class="more" id="more" hidden>Envie de plus d'essais pour cette démo ? <a href="https://mydidactikstories.com/#contact" target="_blank" rel="noopener">Clique ici</a></p>
         </div>
 
         <div class="view v-in">
@@ -579,6 +586,17 @@
   var $ = function (id) { return document.getElementById(id); };
   function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function prenomVal() { var v = ($("prenom") ? $("prenom").value : "").trim(); return v || "Bertille"; }
+  /* Quota d'essais par appel (0 = illimité). La version démo publique le fixe à 3 (voir variants.js). */
+  var QUOTA = 0;
+  function usedTries() { var a = []; try { a = JSON.parse(localStorage.getItem("pop-quota") || "[]"); } catch (e) {} return SCN.map(function (_, i) { return +a[i] || 0; }); }
+  function triesLeft(i) { return QUOTA ? Math.max(0, QUOTA - usedTries()[i]) : Infinity; }
+  function spendTry(i) { if (!QUOTA) return; var a = usedTries(); a[i]++; try { localStorage.setItem("pop-quota", JSON.stringify(a)); } catch (e) {} }
+  function applyQuota() {
+    if (!QUOTA) return;
+    var out = triesLeft(cur) === 0, any = SCN.some(function (_, i) { return triesLeft(i) === 0; });
+    $("more-all").hidden = !any; $("more").hidden = !out;
+    if (state === "idle") { $("start").disabled = out; $("start-txt").textContent = out ? "Essais épuisés" : "Start"; }
+  }
   function managerVal() { var v = ($("manager") ? $("manager").value : "").trim(); return v || "Alexandra"; }
   function prenomDitVal() { return prenomVal(); }
   /* Moteur vocal : ElevenLabs par défaut s'il est configuré côté serveur, Gemini en secours (?engine=gemini pour forcer). */
@@ -596,11 +614,14 @@
     var box = $("calls"); box.innerHTML = "";
     SCN.forEach(function (s, i) {
       var b = document.createElement("button");
-      b.className = "call"; b.setAttribute("role", "radio");
+      var left = triesLeft(i), out = left === 0;
+      b.className = "call" + (out ? " out" : ""); b.setAttribute("role", "radio");
       b.setAttribute("aria-checked", i === cur ? "true" : "false");
+      if (out) b.setAttribute("aria-disabled", "true");
       var st = done[i] === null ? "" : '<span class="state">joué</span>';
-      b.innerHTML = '<span class="ico">' + PHONE_ICO + '</span><span><b>Appel ' + (i + 1) + '</b><small>Numéro masqué</small></span>' + st;
-      b.addEventListener("click", function () { pick(i); });
+      var sub = !QUOTA ? "Numéro masqué" : out ? "Essais épuisés" : left + (left > 1 ? " essais restants" : " essai restant");
+      b.innerHTML = '<span class="ico">' + PHONE_ICO + '</span><span><b>Appel ' + (i + 1) + '</b><small>' + sub + '</small></span>' + st;
+      b.addEventListener("click", function () { if (triesLeft(i) === 0) { $("more-all").hidden = false; return; } pick(i); });
       box.appendChild(b);
     });
   }
@@ -717,9 +738,11 @@
     stopRing();
     $("start").disabled = false; $("start-txt").textContent = "Start";
     setState("idle");
+    applyQuota();
   }
   function start() {
     if (startTimer) return;
+    if (triesLeft(cur) === 0) { applyQuota(); return; }
     var pi = $("prenom");
     if (!pi.value.trim()) { pi.classList.add("bad"); pi.focus(); return; }
     pi.classList.remove("bad");
@@ -783,6 +806,7 @@
     $("note").textContent = "Connexion…"; $("note").classList.remove("err");
     var warned = false;
     smsHide();
+    spendTry(cur); renderCalls();
     Eng.start(cur + 1, {
       prenom: prenomVal(), prenomDit: prenomDitVal(), manager: managerVal(),
       onEvent: function (name) { if (name === "envoi_code") smsArrive(); },
@@ -844,7 +868,7 @@
   document.querySelectorAll(".tab").forEach(function (t) { t.addEventListener("click", function () { selectTab(t.id); }); });
 
   (function () { var d = new Date(); var t = d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes(); $("clock").textContent = t; $("lock-time").textContent = t; })();
-  pick(0);
+  (function () { var first = 0; for (var i = 0; i < SCN.length; i++) { if (triesLeft(i) > 0) { first = i; break; } } pick(first); })();
 </script>
 </body>
 </html>

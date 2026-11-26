@@ -3,6 +3,11 @@
 // à la volée au HTML et aux prompts de secours Gemini ; l'original reste intact.
 export const DEMO_SUBS = [
   ["<meta name=\"robots\" content=\"noindex, nofollow\">\n", ""],
+  ["var QUOTA = 0;", "var QUOTA = 3;"],
+  ["return v || \"Bertille\"; }", "return v || \"Ton prénom\"; }"],
+  ["au Crédit Belge", "à la Banque Horizon"],
+  ["du Crédit Belge", "de la Banque Horizon"],
+  ["le Crédit Belge", "la Banque Horizon"],
   ["Crédit Belge", "Banque Horizon"],
   ["collaborateur UCM", "collaborateur"],
   ["technicien du support informatique interne de l'UCM (fictif)", "technicien du support informatique interne de l'entreprise (fictive)"],
