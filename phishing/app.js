@@ -3,7 +3,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
 import { GoogleGenAI, Modality, Type, StartSensitivity, EndSensitivity } from "@google/genai";
-import { SCENARIOS } from "./prompts.js";
+import fs from "node:fs";
+import { SCENARIOS as BASE_SCENARIOS } from "./prompts.js";
+import { applyDemo } from "./variants.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LIVE_MODEL = process.env.LIVE_MODEL || "gemini-3.8-live";
@@ -23,14 +25,23 @@ function safeSend(ws, payload) {
 }
 
 // Agents ElevenLabs (un par scénario). Surchargeables par variables d'environnement.
-const EL_AGENTS = {
+const WORKSHOP_AGENTS = {
   1: process.env.EL_AGENT_1 || "agent_0701m89t8qjceyha265js2wxez4e", // Thomas (banque)
   2: process.env.EL_AGENT_2 || "agent_5401m89weyzqffssxx2r5vfkvs28", // Julien (IT)
   3: process.env.EL_AGENT_3 || "agent_9301m89wf1daf50vtpnxkeah4am2", // Marc Delvaux
   4: process.env.EL_AGENT_4 || "agent_7001m89wf3d3ee58fzfvx2g2wdnx", // Stéphanie (colis)
 };
 
+const DEMO_AGENTS = {
+  1: process.env.EL_DEMO_PHISH_1 || "agent_6301m8bvh2cwf8as03jrg7ceghac", // Thomas (Banque Horizon)
+  2: process.env.EL_DEMO_PHISH_2 || "agent_8201m8bvh49gfvnsg1y5ds3t0wpe", // Julien (IT)
+  3: process.env.EL_DEMO_PHISH_3 || "agent_5401m8bvh578ey5a83x7vrcpfcad", // Marc Delvaux
+  4: process.env.EL_DEMO_PHISH_4 || "agent_5401m8bvh6c8e29a5h3xh54we8n2", // Stéphanie (Mondial Relay)
+};
+
+function makeApp({ variant, EL_AGENTS }) {
 const app = express();
+if (variant === "workshop") app.use((_req, res, next) => { res.set("X-Robots-Tag", "noindex, nofollow"); next(); });
 app.get("/api/health", (_req, res) =>
   res.json({
     ok: true,
@@ -68,13 +79,28 @@ app.get("/api/el-session", async (req, res) => {
     res.status(502).json({ error: "Impossible de joindre ElevenLabs." });
   }
 });
+if (variant === "demo") {
+  const serveIndex = (_req, res) => {
+    try {
+      const html = applyDemo(fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8"));
+      res.set({ "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" }).send(html);
+    } catch { res.status(500).send("Erreur"); }
+  };
+  app.get(["/", "/index.html"], serveIndex);
+}
 app.use(express.static(path.join(__dirname, "public")));
+return app;
+}
 
-const wss = new WebSocketServer({ noServer: true });
-
-/* Point d'entrée pour le serveur hôte : un gestionnaire HTTP (déjà débarrassé du préfixe /phishing)
-   et un gestionnaire d'upgrade WebSocket pour /phishing/api/live. */
-export function createPhishing() {
+/* Point d'entrée pour le serveur hôte : un gestionnaire HTTP (déjà débarrassé du préfixe)
+   et un gestionnaire d'upgrade WebSocket pour <préfixe>/api/live.
+   variant "workshop" = version de l'atelier UCM (non référencée) ; "demo" = version publique générique. */
+export function createPhishing({ variant = "workshop" } = {}) {
+  const demo = variant === "demo";
+  const app = makeApp({ variant, EL_AGENTS: demo ? DEMO_AGENTS : WORKSHOP_AGENTS });
+  const scenarios = demo ? BASE_SCENARIOS.map((s) => ({ ...s, prompt: applyDemo(s.prompt), opener: applyDemo(s.opener) })) : BASE_SCENARIOS;
+  const wss = new WebSocketServer({ noServer: true });
+  attachLive(wss, scenarios, demo ? "/phishing-demo/api/live" : "/phishing/api/live");
   return {
     handle: (req, res) => app(req, res),
     upgrade: (request, socket, head) => {
@@ -83,8 +109,9 @@ export function createPhishing() {
   };
 }
 
+function attachLive(wss, SCENARIOS, livePath) {
 wss.on("connection", async (clientWs, request) => {
-  const url = new URL(request.url ?? "/phishing/api/live", `http://${request.headers.host}`);
+  const url = new URL(request.url ?? livePath, `http://${request.headers.host}`);
   const scn = SCENARIOS.find((s) => s.id === Number(url.searchParams.get("scenario")));
   if (!scn) {
     safeSend(clientWs, { type: "error", message: "Scénario inconnu." });
@@ -200,4 +227,4 @@ wss.on("connection", async (clientWs, request) => {
   clientWs.on("close", cleanup);
   clientWs.on("error", cleanup);
 });
-
+}

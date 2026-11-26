@@ -302,15 +302,30 @@ function handleStatic(req, res) {
 // « Phishing ou pas ? » : module ES (Express + ws + SDK Gemini 3.x) monté sur /phishing/.
 // Il vit dans phishing/ avec ses propres dépendances (installées via le script postinstall),
 // pour ne rien changer au SDK Gemini 1.x utilisé par les 4 autres expériences.
+// Deux instances : /phishing/ (version atelier UCM, non listée sur la page d'accueil) et
+// /phishing-demo/ (version publique générique, liée depuis la page d'accueil).
 let phishing = null;
+let phishingDemo = null;
 import('./phishing/app.js')
-  .then((m) => { phishing = m.createPhishing(); console.log('✅ Module /phishing/ chargé'); })
+  .then((m) => {
+    phishing = m.createPhishing({ variant: 'workshop' });
+    phishingDemo = m.createPhishing({ variant: 'demo' });
+    console.log('✅ Modules /phishing/ et /phishing-demo/ chargés');
+  })
   .catch((e) => console.error('⚠️  Module /phishing/ indisponible :', e && (e.message || e)));
 
 const PHISHING_PREFIX = '/phishing';
+const PHISHING_DEMO_PREFIX = '/phishing-demo';
+function estPrefixe(url, prefix) { return url === prefix || url.startsWith(prefix + '/') || url.startsWith(prefix + '?'); }
 function estPhishing(url) { return url === PHISHING_PREFIX || url.startsWith(PHISHING_PREFIX + '/') || url.startsWith(PHISHING_PREFIX + '?'); }
 
 const server = http.createServer((req, res) => {
+  if (estPrefixe(req.url || '', PHISHING_DEMO_PREFIX)) {
+    if (!phishingDemo) { res.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Module phishing indisponible.'); }
+    if (req.url === PHISHING_DEMO_PREFIX) { res.writeHead(301, { Location: PHISHING_DEMO_PREFIX + '/' }); return res.end(); }
+    req.url = req.url.slice(PHISHING_DEMO_PREFIX.length) || '/';
+    return phishingDemo.handle(req, res);
+  }
   if (estPhishing(req.url || '')) {
     if (!phishing) { res.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Module phishing indisponible.'); }
     if (req.url === PHISHING_PREFIX) { res.writeHead(301, { Location: PHISHING_PREFIX + '/' }); return res.end(); }
@@ -327,9 +342,10 @@ const server = http.createServer((req, res) => {
 
 server.on('upgrade', (request, socket, head) => {
   const chemin = (request.url || '').split('?')[0];
+  if (phishingDemo && chemin === PHISHING_DEMO_PREFIX + '/api/live') return phishingDemo.upgrade(request, socket, head);
   if (phishing && chemin === PHISHING_PREFIX + '/api/live') return phishing.upgrade(request, socket, head);
   socket.destroy();
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('✅ Serveur prêt sur le port ' + PORT + ' — / /vente/ /management/ /langues/ /phishing/'));
+server.listen(PORT, () => console.log('✅ Serveur prêt sur le port ' + PORT + ' — / /vente/ /management/ /langues/ /phishing-demo/ (+ /phishing/ atelier)'));
