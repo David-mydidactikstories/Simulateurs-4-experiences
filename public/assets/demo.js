@@ -5,7 +5,7 @@
   var D = window.DEMO, $ = function (s, r) { return (r || document).querySelector(s); };
   var qs = new URLSearchParams(location.search);
   var prefPrenom = (qs.get("p") || "").replace(/[<>"&]/g, "").slice(0, 30);
-  var maxCalls = parseInt(qs.get("n") || "", 10) || 0;
+  var maxCalls = parseInt(qs.get("n") || "", 10) || D.defaultCalls || 5;
   var maxMin = parseFloat(qs.get("m") || "") || D.maxMin || 4;
   var storeKey = "mds_" + D.key + "_calls";
   var transcript = [], state = { pick: D.picker.items[0].id, extra: {}, prenom: prefPrenom }, tick = null, t0 = 0, timers = [], raf = 0, phase = "setup";
