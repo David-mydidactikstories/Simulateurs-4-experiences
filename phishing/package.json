@@ -1,0 +1,12 @@
+{
+  "name": "phishing-ou-pas",
+  "private": true,
+  "type": "module",
+  "description": "Phishing ou pas ? — module monté sur /phishing/ par le serveur principal",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@google/genai": "^3.6.1",
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  }
+}

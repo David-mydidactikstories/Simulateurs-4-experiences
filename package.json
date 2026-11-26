@@ -1,13 +1,14 @@
 {
   "name": "simulateurs-4-experiences",
   "version": "1.0.0",
-  "description": "4 simulateurs vocaux MyDidactik Stories regroupés sur un seul serveur (Marc, Language Lab, Témoin, Esprit Tranquille)",
+  "description": "5 simulateurs vocaux MyDidactik Stories regroupés sur un seul serveur (Marc, Language Lab, Témoin, Esprit Tranquille, Phishing ou pas)",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "npm install --prefix phishing"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "@google/genai": "^1.0.0"

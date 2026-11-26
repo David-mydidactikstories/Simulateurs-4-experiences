@@ -79,6 +79,7 @@ select option{background:#14141f;color:var(--txt)}
       <option value="langues">Langues — La réservation</option>
       <option value="histoire">Histoire — Rencontres avec le passé</option>
       <option value="assurance">Vente — Appel de prospection, assurance</option>
+      <option value="phishing">Sécurité — Phishing ou pas ?</option>
     </select>
 
     <div class="desc" id="desc"></div>
@@ -114,6 +115,13 @@ const EXPERIENCES = {
     color: '#fb923c',
     icon: 'landmark',
     texte: "Une rencontre vocale avec un témoin du passé. Posez vos questions, découvrez une époque racontée de l'intérieur."
+  },
+  phishing: {
+    route: 'phishing',
+    tag: 'Sécurité',
+    color: '#facc15',
+    icon: 'shield-alert',
+    texte: "Un numéro masqué vous appelle. Vrai ou faux ? Posez les bonnes questions, puis tranchez : quatre appels, quatre situations du quotidien."
   },
   assurance: {
     route: 'assurance',

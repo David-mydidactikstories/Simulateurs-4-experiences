@@ -253,7 +253,24 @@ function handleStatic(req, res) {
   });
 }
 
+// « Phishing ou pas ? » : module ES (Express + ws + SDK Gemini 3.x) monté sur /phishing/.
+// Il vit dans phishing/ avec ses propres dépendances (installées via le script postinstall),
+// pour ne rien changer au SDK Gemini 1.x utilisé par les 4 autres expériences.
+let phishing = null;
+import('./phishing/app.js')
+  .then((m) => { phishing = m.createPhishing(); console.log('✅ Module /phishing/ chargé'); })
+  .catch((e) => console.error('⚠️  Module /phishing/ indisponible :', e && (e.message || e)));
+
+const PHISHING_PREFIX = '/phishing';
+function estPhishing(url) { return url === PHISHING_PREFIX || url.startsWith(PHISHING_PREFIX + '/') || url.startsWith(PHISHING_PREFIX + '?'); }
+
 const server = http.createServer((req, res) => {
+  if (estPhishing(req.url || '')) {
+    if (!phishing) { res.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Module phishing indisponible.'); }
+    if (req.url === PHISHING_PREFIX) { res.writeHead(301, { Location: PHISHING_PREFIX + '/' }); return res.end(); }
+    req.url = req.url.slice(PHISHING_PREFIX.length) || '/';
+    return phishing.handle(req, res);
+  }
   if (req.method === 'POST' && req.url === '/api/token') return handleToken(req, res);
   if (req.method === 'POST' && req.url === '/api/debrief') return handleDebrief(req, res);
   if (req.method === 'POST' && req.url === '/api/verifier') return handleVerifier(req, res);
@@ -261,5 +278,11 @@ const server = http.createServer((req, res) => {
   res.writeHead(405); res.end();
 });
 
+server.on('upgrade', (request, socket, head) => {
+  const chemin = (request.url || '').split('?')[0];
+  if (phishing && chemin === PHISHING_PREFIX + '/api/live') return phishing.upgrade(request, socket, head);
+  socket.destroy();
+});
+
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('✅ Serveur prêt sur le port ' + PORT + ' — 4 expériences : /marc/ /langues/ /histoire/ /assurance/'));
+server.listen(PORT, () => console.log('✅ Serveur prêt sur le port ' + PORT + ' — /marc/ /langues/ /histoire/ /assurance/ /phishing/'));

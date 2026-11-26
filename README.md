@@ -56,3 +56,10 @@ ou garder une carte par expérience pointant directement vers
 `.../marc/`, `.../langues/`, `.../histoire/`, `.../assurance/` — au choix.
 Les 4 anciens services Render individuels peuvent alors être suspendus ou
 supprimés pour arrêter leur facturation.
+
+## 5e expérience : « Phishing ou pas ? » (`/phishing/`)
+
+Simulation d'appels vocaux (quatre appels : banque, IT, faux membre, faux colis), cerveau Claude via
+ElevenLabs Agents, Gemini Live en secours. Le code vit dans `phishing/` avec ses propres dépendances
+(`npm install` à la racine les installe via le script `postinstall`). Variables d'environnement à ajouter sur
+Render : `ELEVENLABS_API_KEY` (et `GEMINI_API_KEY`, déjà présente, pour le secours). Node 20 minimum.
