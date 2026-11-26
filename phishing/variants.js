@@ -9,6 +9,7 @@ export const DEMO_SUBS = [
   ["du Crédit Belge", "de la Banque Horizon"],
   ["le Crédit Belge", "la Banque Horizon"],
   ["Crédit Belge", "Banque Horizon"],
+  ["Un membre · changer son IBAN", "Un client · changer son IBAN"],
   ["collaborateur UCM", "collaborateur"],
   ["technicien du support informatique interne de l'UCM (fictif)", "technicien du support informatique interne de l'entreprise (fictive)"],
   ["UCM-0457", "INV-0457"],
