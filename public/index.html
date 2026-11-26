@@ -110,18 +110,16 @@
 <script>
   /* ── À modifier ici si besoin ── */
   var CONTACT = {
+    page: "https://mydidactikstories.com/#contact",   /* page de contact du site : les cartes « Demander la démo » y mènent */
     mail: "david@mydidactikstories.com",
     linkedin: ""   /* colle ici l'adresse de ton profil LinkedIn pour afficher le bouton */
   };
   var qs = new URLSearchParams(location.search);
   var p = (qs.get("p") || "").replace(/[<>"&]/g, "").slice(0, 30);
   if (p) { var w = document.getElementById("who"); w.textContent = "Démos préparées pour " + p; w.hidden = false; }
-  /* Chaque carte ouvre un mail de demande : David renvoie ensuite le lien de la démo. */
+  /* Chaque carte mène au formulaire de contact du site : David renvoie ensuite le lien de la démo. */
   [].forEach.call(document.querySelectorAll("#cards a"), function (a) {
-    var d = a.getAttribute("data-demo");
-    var sj = encodeURIComponent("Demande de démo : " + d);
-    var bd = encodeURIComponent("Bonjour David,\n\nJe souhaiterais essayer la démo « " + d + " ».\n\nMon contexte / mon besoin : \n\nMerci !" + (p ? "\n\n" + p : ""));
-    a.href = "mailto:" + CONTACT.mail + "?subject=" + sj + "&body=" + bd;
+    a.href = CONTACT.page; a.target = "_blank"; a.rel = "noopener";
   });
   var sujet = encodeURIComponent("Échange autour des simulateurs vocaux");
   var corps = encodeURIComponent("Bonjour David,\n\nJ'ai découvert vos simulateurs vocaux et j'aimerais échanger à ce sujet.\n\nMon idée / mon besoin : \n\nMerci !" + (p ? "\n\n" + p : ""));
