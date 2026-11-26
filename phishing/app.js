@@ -41,7 +41,7 @@ const DEMO_AGENTS = {
 
 function makeApp({ variant, EL_AGENTS }) {
 const app = express();
-if (variant === "workshop") app.use((_req, res, next) => { res.set("X-Robots-Tag", "noindex, nofollow"); next(); });
+app.use((_req, res, next) => { res.set("X-Robots-Tag", "noindex, nofollow"); next(); });
 app.get("/api/health", (_req, res) =>
   res.json({
     ok: true,
