@@ -348,6 +348,22 @@
     *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 </style>
+<script>
+/* Mesure d'audience : seulement sur la démo publique, et seulement si le visiteur a accepté sur mydidactikstories.com (paramètre c=1). */
+(function () {
+  if (location.pathname.indexOf("/phishing-demo") !== 0) { window.popTrack = function () {}; return; }
+  var ok = false;
+  try { if (/[?&]c=1\b/.test(location.search)) sessionStorage.setItem("mds-c", "1"); ok = sessionStorage.getItem("mds-c") === "1"; } catch (e) {}
+  if (!ok) { window.popTrack = function () {}; return; }
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag("consent", "default", { ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "granted" });
+  var sc = document.createElement("script"); sc.async = true; sc.src = "https://www.googletagmanager.com/gtag/js?id=G-M3ZT6ZXGBW"; document.head.appendChild(sc);
+  gtag("js", new Date());
+  gtag("config", "G-M3ZT6ZXGBW", { page_title: "Démo Phishing ou pas", linker: { domains: ["mydidactikstories.com", "simulateurs-4-experiences.onrender.com"] } });
+  window.popTrack = function (n, p) { gtag("event", n, p || {}); };
+})();
+</script>
 </head>
 <body>
 <header>
@@ -596,6 +612,7 @@
     if (!QUOTA) return;
     var out = triesLeft(cur) === 0, any = SCN.some(function (_, i) { return triesLeft(i) === 0; });
     $("more-all").hidden = !any; $("more").hidden = !out;
+    if (out && !applyQuota.sent) { applyQuota.sent = 1; popTrack("demo_quota_reached", { demo_name: "Phishing ou pas", call_number: cur + 1 }); }
     if (state === "idle") { $("start").disabled = out; $("start-txt").textContent = out ? "Essais épuisés" : "Start"; }
   }
   function managerVal() { var v = ($("manager") ? $("manager").value : "").trim(); return v || "Alexandra"; }
@@ -808,6 +825,7 @@
     var warned = false;
     smsHide();
     spendTry(cur); renderCalls();
+    popTrack("demo_call_start", { demo_name: "Phishing ou pas", call_number: cur + 1, call_topic: SCN[cur].topic });
     Eng.start(cur + 1, {
       prenom: prenomVal(), prenomDit: prenomDitVal(), manager: managerVal(),
       onEvent: function (name) { if (name === "envoi_code") smsArrive(); },
@@ -843,6 +861,7 @@
     $("r-lead").textContent = s.lead;
     $("r-detect").textContent = callback ? "Ce que tu as fait : tu as vérifié en rappelant le poste interne 4412." : "Ce que tu as fait : " + (gave ? s.yes : s.no) + ".";
     done[cur] = gave; renderCalls();
+    popTrack("demo_call_end", { demo_name: "Phishing ou pas", call_number: cur + 1, call_result: (s.hacker ? !gave : gave) ? "réussi" : "piégé" });
     setState("result");
     /* Sons : réussi (n'a pas donné à un hacker, ou a donné au vrai) = applaudissements ; piégé = rire du hacker. */
     var ok = s.hacker ? !gave : gave;
@@ -871,5 +890,6 @@
   (function () { var d = new Date(); var t = d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes(); $("clock").textContent = t; $("lock-time").textContent = t; })();
   (function () { var first = 0; for (var i = 0; i < SCN.length; i++) { if (triesLeft(i) > 0) { first = i; break; } } pick(first); })();
 </script>
+<script>document.addEventListener("click", function (e) { var a = e.target.closest && e.target.closest(".more a"); if (a) popTrack("demo_more_click", { demo_name: "Phishing ou pas" }); });</script>
 </body>
 </html>
