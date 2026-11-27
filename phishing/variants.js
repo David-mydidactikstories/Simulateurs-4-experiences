@@ -3,7 +3,8 @@
 // à la volée au HTML et aux prompts de secours Gemini ; l'original reste intact.
 export const DEMO_SUBS = [
   ["<meta name=\"robots\" content=\"noindex, nofollow\">\n", ""],
-  ["var QUOTA = 0;", "var QUOTA = 3;"],
+  // 3 essais par appel pour le public ; un lien partenaire peut en donner davantage avec ?n=… (de 1 à 50). Sans ?n, ou avec une valeur invalide, on reste à 3.
+  ["var QUOTA = 0;", "var QUOTA = (function () { var n = parseInt(new URLSearchParams(location.search).get(\"n\"), 10); return n >= 1 ? Math.min(n, 50) : 3; })();"],
   ["return v || \"Bertille\"; }", "return v || \"Ton prénom\"; }"],
   ["au Crédit Belge", "à la Banque Horizon"],
   ["du Crédit Belge", "de la Banque Horizon"],
